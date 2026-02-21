@@ -1,0 +1,12 @@
+{
+  "name": "gcl-switcher",
+  "version": "1.0.0",
+  "description": "Switch Claude Code between GLM (z.ai) and native Claude by editing ~/.claude/settings.json",
+  "bin": {
+    "gcl-switcher": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
