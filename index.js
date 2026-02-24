@@ -8,7 +8,7 @@
  * https://github.com/bivex
  *
  * Created: 2026-02-21 03:36
- * Last Updated: 2026-02-21 03:40
+ * Last Updated: 2026-02-24 20:32
  *
  * Licensed under the MIT License.
  * Commercial licensing available upon request.
@@ -32,7 +32,16 @@ const GLM_ENV = {
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'glm-4.5-air',
 };
 
-const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV)];
+// LM Studio (local) defaults
+const LM_STUDIO_BASE_URL = 'http://localhost:1234/v1';
+const LM_STUDIO_TOKEN = 'lm-studio';
+const LM_STUDIO_ENV = {
+  ANTHROPIC_BASE_URL: LM_STUDIO_BASE_URL,
+  ANTHROPIC_MODEL:    'default',
+};
+
+const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV), 'ANTHROPIC_BASE_URL'];
+const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -47,7 +56,9 @@ function writeJson(p, data) {
 
 function currentMode(settings) {
   const url = settings?.env?.ANTHROPIC_BASE_URL ?? '';
-  return url.includes('z.ai') ? 'glm' : 'claude';
+  if (url.includes('z.ai')) return 'glm';
+  if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
+  return 'claude';
 }
 
 // ── commands ───────────────────────────────────────────────────────────────
@@ -63,6 +74,10 @@ function status() {
     console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-4.7'));
     console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'glm-4.7'));
     console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || 'glm-4.5-air'));
+  } else if (mode === 'lmstudio') {
+    console.log('Active mode: LM Studio (local)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Token    : ' + (settings.env.ANTHROPIC_AUTH_TOKEN || '(none)'));
   } else {
     console.log('Active mode: Claude (native)');
   }
@@ -87,11 +102,29 @@ function useGlm() {
   const settings = readJson(SETTINGS_PATH);
   settings.env   = settings.env ?? {};
 
+  // clear any LM Studio keys before switching
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, GLM_ENV);
 
   writeJson(SETTINGS_PATH, settings);
   console.log('Switched to GLM (z.ai). Restart Claude Code to apply.');
+}
+
+function useLmStudio() {
+  const settings = readJson(SETTINGS_PATH);
+  settings.env = settings.env ?? {};
+
+  // clear GLM keys when enabling LM Studio
+  for (const k of GLM_KEYS) delete settings.env[k];
+
+  Object.assign(settings.env, LM_STUDIO_ENV);
+  // set a permissive token Claude Code recognizes for LM Studio bridges
+  settings.env.ANTHROPIC_AUTH_TOKEN = LM_STUDIO_TOKEN;
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to LM Studio (local). Restart Claude Code to apply.');
 }
 
 function useClaude() {
@@ -102,6 +135,7 @@ function useClaude() {
   }
 
   for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
 
   writeJson(SETTINGS_PATH, settings);
   console.log('Switched to Claude (native). Restart Claude Code to apply.');
@@ -126,6 +160,7 @@ function help() {
     'Usage:',
     '  gcl-switcher status              Show active mode and settings',
     '  gcl-switcher use glm             Switch to GLM (z.ai)',
+    '  gcl-switcher use lmstudio        Switch to LM Studio (local)',
     '  gcl-switcher use claude          Switch to native Claude',
     '  gcl-switcher set-key <api_key>   Save your z.ai API key',
     '  gcl-switcher help                Show this help',
@@ -152,9 +187,10 @@ switch (cmd) {
     break;
 
   case 'use':
-    if (sub === 'glm')    useGlm();
-    else if (sub === 'claude') useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|claude>'); process.exit(1); }
+    if (sub === 'glm')        useGlm();
+    else if (sub === 'lmstudio') useLmStudio();
+    else if (sub === 'claude')    useClaude();
+    else { console.error('Usage: gcl-switcher use <glm|lmstudio|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
