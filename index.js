@@ -33,7 +33,7 @@ const GLM_ENV = {
 };
 
 // LM Studio (local) defaults
-const LM_STUDIO_BASE_URL = 'http://localhost:1234/v1';
+const LM_STUDIO_BASE_URL = 'http://localhost:1234';
 const LM_STUDIO_TOKEN = 'lm-studio';
 const LM_STUDIO_ENV = {
   ANTHROPIC_BASE_URL: LM_STUDIO_BASE_URL,
