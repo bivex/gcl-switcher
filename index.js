@@ -32,12 +32,15 @@ const GLM_ENV = {
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'glm-4.5-air',
 };
 
-// GLM-5 defaults
+// GLM-5 defaults (coding optimized)
 const GLM5_ENV = {
   ANTHROPIC_BASE_URL:              GLM_BASE_URL,
   ANTHROPIC_DEFAULT_OPUS_MODEL:   'glm-5',
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5',
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'glm-5',
+  // Coding optimizations
+  API_TIMEOUT_MS:                  '300000',  // 5 min timeout for long code gen
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',  // faster responses
 };
 
 // LM Studio (local) defaults
@@ -49,7 +52,7 @@ const LM_STUDIO_ENV = {
 };
 
 const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV), 'ANTHROPIC_BASE_URL'];
-const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_BASE_URL'];
+const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -203,7 +206,7 @@ function help() {
     'Usage:',
     '  gcl-switcher status              Show active mode and settings',
     '  gcl-switcher use glm             Switch to GLM (z.ai)',
-    '  gcl-switcher use glm5            Switch to GLM-5 (z.ai)',
+    '  gcl-switcher use glm5            Switch to GLM-5 (coding optimized)',
     '  gcl-switcher use lmstudio        Switch to LM Studio (local)',
     '  gcl-switcher use claude          Switch to native Claude',
     '  gcl-switcher set-key <api_key>   Save your z.ai API key',
@@ -211,9 +214,14 @@ function help() {
     '',
     'Quickstart:',
     '  gcl-switcher set-key sk-xxxxxxx  # save key once',
-    '  gcl-switcher use glm             # activate GLM',
-    '  gcl-switcher use glm5            # activate GLM-5',
+    '  gcl-switcher use glm5            # activate GLM-5 (best for coding)',
     '  gcl-switcher use claude          # go back to native Claude',
+    '',
+    'GLM-5 Coding Features:',
+    '  - 200K context, 128K max output',
+    '  - SOTA open-weight model for coding',
+    '  - Optimized for complex systems & agents',
+    '  - Extended timeout (5min) for long code gen',
     '',
     'Config files:',
     '  ~/.claude/settings.json          Claude Code settings (edited by this tool)',
