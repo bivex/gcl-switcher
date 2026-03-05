@@ -17,6 +17,9 @@ gcl-switcher set-key sk-xxxxxxxxxxxxxxxx
 # Switch to GLM
 gcl-switcher use glm
 
+# Switch to GLM-5
+gcl-switcher use glm5
+
 # Switch back to native Claude
 gcl-switcher use claude
 
@@ -30,6 +33,7 @@ gcl-switcher status
 |---|---|
 | `gcl-switcher status` | Show active mode and current settings |
 | `gcl-switcher use glm` | Switch to GLM (z.ai) |
+| `gcl-switcher use glm5` | Switch to GLM-5 (z.ai) |
 | `gcl-switcher use claude` | Switch to native Claude |
 | `gcl-switcher set-key <api_key>` | Save your z.ai API key |
 | `gcl-switcher help` | Show help |
@@ -46,6 +50,20 @@ gcl-switcher status
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.7",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.7",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air"
+  }
+}
+```
+
+**`use glm5`** uses `glm-5` for all model tiers:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "<your_key>",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5"
   }
 }
 ```

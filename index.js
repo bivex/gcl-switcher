@@ -32,6 +32,14 @@ const GLM_ENV = {
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'glm-4.5-air',
 };
 
+// GLM-5 defaults
+const GLM5_ENV = {
+  ANTHROPIC_BASE_URL:              GLM_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'glm-5',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'glm-5',
+};
+
 // LM Studio (local) defaults
 const LM_STUDIO_BASE_URL = 'http://localhost:1234';
 const LM_STUDIO_TOKEN = 'lm-studio';
@@ -41,6 +49,7 @@ const LM_STUDIO_ENV = {
 };
 
 const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV), 'ANTHROPIC_BASE_URL'];
+const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_BASE_URL'];
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -56,6 +65,8 @@ function writeJson(p, data) {
 
 function currentMode(settings) {
   const url = settings?.env?.ANTHROPIC_BASE_URL ?? '';
+  const opus = settings?.env?.ANTHROPIC_DEFAULT_OPUS_MODEL ?? '';
+  if (url.includes('z.ai') && opus === 'glm-5') return 'glm5';
   if (url.includes('z.ai')) return 'glm';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
   return 'claude';
@@ -68,7 +79,13 @@ function status() {
   const config   = readJson(CONFIG_PATH);
   const mode     = currentMode(settings);
 
-  if (mode === 'glm') {
+  if (mode === 'glm5') {
+    console.log('Active mode: GLM-5 (z.ai)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-5'));
+    console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'glm-5'));
+    console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || 'glm-5'));
+  } else if (mode === 'glm') {
     console.log('Active mode: GLM (z.ai)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-4.7'));
@@ -85,7 +102,7 @@ function status() {
   if (config.glmApiKey) {
     const k = config.glmApiKey;
     console.log('  API key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
-  } else if (mode === 'glm') {
+  } else if (mode === 'glm' || mode === 'glm5') {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
   }
 }
@@ -102,7 +119,8 @@ function useGlm() {
   const settings = readJson(SETTINGS_PATH);
   settings.env   = settings.env ?? {};
 
-  // clear any LM Studio keys before switching
+  // clear any GLM5 and LM Studio keys before switching
+  for (const k of GLM5_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
@@ -112,12 +130,36 @@ function useGlm() {
   console.log('Switched to GLM (z.ai). Restart Claude Code to apply.');
 }
 
+function useGlm5() {
+  const config = readJson(CONFIG_PATH);
+  const key    = config.glmApiKey;
+
+  if (!key) {
+    console.error('No API key saved. Run first:\n  gcl-switcher set-key <your_z.ai_api_key>');
+    process.exit(1);
+  }
+
+  const settings = readJson(SETTINGS_PATH);
+  settings.env   = settings.env ?? {};
+
+  // clear any GLM and LM Studio keys before switching
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+
+  settings.env.ANTHROPIC_AUTH_TOKEN = key;
+  Object.assign(settings.env, GLM5_ENV);
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to GLM-5 (z.ai). Restart Claude Code to apply.');
+}
+
 function useLmStudio() {
   const settings = readJson(SETTINGS_PATH);
   settings.env = settings.env ?? {};
 
-  // clear GLM keys when enabling LM Studio
+  // clear GLM and GLM5 keys when enabling LM Studio
   for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
 
   Object.assign(settings.env, LM_STUDIO_ENV);
   // set a permissive token Claude Code recognizes for LM Studio bridges
@@ -135,6 +177,7 @@ function useClaude() {
   }
 
   for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
 
   writeJson(SETTINGS_PATH, settings);
@@ -160,6 +203,7 @@ function help() {
     'Usage:',
     '  gcl-switcher status              Show active mode and settings',
     '  gcl-switcher use glm             Switch to GLM (z.ai)',
+    '  gcl-switcher use glm5            Switch to GLM-5 (z.ai)',
     '  gcl-switcher use lmstudio        Switch to LM Studio (local)',
     '  gcl-switcher use claude          Switch to native Claude',
     '  gcl-switcher set-key <api_key>   Save your z.ai API key',
@@ -168,6 +212,7 @@ function help() {
     'Quickstart:',
     '  gcl-switcher set-key sk-xxxxxxx  # save key once',
     '  gcl-switcher use glm             # activate GLM',
+    '  gcl-switcher use glm5            # activate GLM-5',
     '  gcl-switcher use claude          # go back to native Claude',
     '',
     'Config files:',
@@ -188,9 +233,10 @@ switch (cmd) {
 
   case 'use':
     if (sub === 'glm')        useGlm();
+    else if (sub === 'glm5')       useGlm5();
     else if (sub === 'lmstudio') useLmStudio();
     else if (sub === 'claude')    useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|lmstudio|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm5|lmstudio|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
