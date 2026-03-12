@@ -1,7 +1,7 @@
 {
   "name": "gcl-switcher",
   "version": "1.0.0",
-  "description": "Switch Claude Code between GLM (z.ai) and native Claude by editing ~/.claude/settings.json",
+  "description": "Switch Claude Code between GLM (z.ai), OpenRouter, LM Studio, and native Claude by editing ~/.claude/settings.json",
   "bin": {
     "gcl-switcher": "./index.js"
   },

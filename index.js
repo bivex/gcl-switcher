@@ -51,9 +51,17 @@ const LM_STUDIO_ENV = {
   ANTHROPIC_MODEL:    'default',
 };
 
+// OpenRouter defaults
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api';
+const OPENROUTER_ENV = {
+  ANTHROPIC_BASE_URL: OPENROUTER_BASE_URL,
+  ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
+};
+
 const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV), 'ANTHROPIC_BASE_URL'];
 const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
+const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -72,6 +80,7 @@ function currentMode(settings) {
   if (url.includes('z.ai') && opus === 'glm-5') return 'glm5';
   if (url.includes('z.ai')) return 'glm';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
+  if (url.includes('openrouter.ai')) return 'openrouter';
   return 'claude';
 }
 
@@ -98,13 +107,19 @@ function status() {
     console.log('Active mode: LM Studio (local)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Token    : ' + (settings.env.ANTHROPIC_AUTH_TOKEN || '(none)'));
+  } else if (mode === 'openrouter') {
+    console.log('Active mode: OpenRouter');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    const k = settings.env.ANTHROPIC_AUTH_TOKEN || '';
+    if (k) console.log('  API key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
+    else console.log('  API key  : (none)');
   } else {
     console.log('Active mode: Claude (native)');
   }
 
   if (config.glmApiKey) {
     const k = config.glmApiKey;
-    console.log('  API key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
+    console.log('  GLM key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
   } else if (mode === 'glm' || mode === 'glm5') {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
   }
@@ -122,9 +137,10 @@ function useGlm() {
   const settings = readJson(SETTINGS_PATH);
   settings.env   = settings.env ?? {};
 
-  // clear any GLM5 and LM Studio keys before switching
+  // clear any GLM5, LM Studio, and OpenRouter keys before switching
   for (const k of GLM5_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, GLM_ENV);
@@ -145,9 +161,10 @@ function useGlm5() {
   const settings = readJson(SETTINGS_PATH);
   settings.env   = settings.env ?? {};
 
-  // clear any GLM and LM Studio keys before switching
+  // clear any GLM, LM Studio, and OpenRouter keys before switching
   for (const k of GLM_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, GLM5_ENV);
@@ -160,9 +177,10 @@ function useLmStudio() {
   const settings = readJson(SETTINGS_PATH);
   settings.env = settings.env ?? {};
 
-  // clear GLM and GLM5 keys when enabling LM Studio
+  // clear GLM, GLM5, and OpenRouter keys when enabling LM Studio
   for (const k of GLM_KEYS) delete settings.env[k];
   for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   Object.assign(settings.env, LM_STUDIO_ENV);
   // set a permissive token Claude Code recognizes for LM Studio bridges
@@ -182,9 +200,34 @@ function useClaude() {
   for (const k of GLM_KEYS) delete settings.env[k];
   for (const k of GLM5_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   writeJson(SETTINGS_PATH, settings);
   console.log('Switched to Claude (native). Restart Claude Code to apply.');
+}
+
+function useOpenRouter() {
+  const config = readJson(CONFIG_PATH);
+  const key    = config.openrouterApiKey;
+
+  if (!key) {
+    console.error('No OpenRouter API key saved. Run first:\n  gcl-switcher set-openrouter-key <your_openrouter_api_key>');
+    process.exit(1);
+  }
+
+  const settings = readJson(SETTINGS_PATH);
+  settings.env   = settings.env ?? {};
+
+  // clear GLM, GLM5, and LM Studio keys before switching
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+
+  settings.env.ANTHROPIC_AUTH_TOKEN = key;
+  Object.assign(settings.env, OPENROUTER_ENV);
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to OpenRouter. Restart Claude Code to apply.');
 }
 
 function setKey(key) {
@@ -195,27 +238,45 @@ function setKey(key) {
   const config   = readJson(CONFIG_PATH);
   config.glmApiKey = key;
   writeJson(CONFIG_PATH, config);
-  console.log('API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
+  console.log('GLM API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
+}
+
+function setOpenRouterKey(key) {
+  if (!key) {
+    console.error('Usage: gcl-switcher set-openrouter-key <api_key>');
+    process.exit(1);
+  }
+  const config   = readJson(CONFIG_PATH);
+  config.openrouterApiKey = key;
+  writeJson(CONFIG_PATH, config);
+  console.log('OpenRouter API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
 }
 
 function help() {
   console.log([
     '',
-    'gcl-switcher  —  switch Claude Code between GLM (z.ai) and native Claude',
+    'gcl-switcher  —  switch Claude Code between GLM, OpenRouter, LM Studio, and native Claude',
     '',
     'Usage:',
-    '  gcl-switcher status              Show active mode and settings',
-    '  gcl-switcher use glm             Switch to GLM (z.ai)',
-    '  gcl-switcher use glm5            Switch to GLM-5 (coding optimized)',
-    '  gcl-switcher use lmstudio        Switch to LM Studio (local)',
-    '  gcl-switcher use claude          Switch to native Claude',
-    '  gcl-switcher set-key <api_key>   Save your z.ai API key',
-    '  gcl-switcher help                Show this help',
+    '  gcl-switcher status                      Show active mode and settings',
+    '  gcl-switcher use glm                     Switch to GLM (z.ai)',
+    '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
+    '  gcl-switcher use openrouter              Switch to OpenRouter',
+    '  gcl-switcher use lmstudio                Switch to LM Studio (local)',
+    '  gcl-switcher use claude                  Switch to native Claude',
+    '  gcl-switcher set-key <api_key>           Save your z.ai API key',
+    '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
+    '  gcl-switcher help                        Show this help',
     '',
-    'Quickstart:',
-    '  gcl-switcher set-key sk-xxxxxxx  # save key once',
-    '  gcl-switcher use glm5            # activate GLM-5 (best for coding)',
-    '  gcl-switcher use claude          # go back to native Claude',
+    'Quickstart (GLM):',
+    '  gcl-switcher set-key sk-xxxxxxx          # save key once',
+    '  gcl-switcher use glm5                    # activate GLM-5 (best for coding)',
+    '',
+    'Quickstart (OpenRouter):',
+    '  gcl-switcher set-openrouter-key sk-or-xx  # save key once',
+    '  gcl-switcher use openrouter               # activate OpenRouter',
+    '',
+    '  gcl-switcher use claude                  # go back to native Claude',
     '',
     'GLM-5 Coding Features:',
     '  - 200K context, 128K max output',
@@ -223,9 +284,15 @@ function help() {
     '  - Optimized for complex systems & agents',
     '  - Extended timeout (5min) for long code gen',
     '',
+    'OpenRouter Features:',
+    '  - Provider failover for high availability',
+    '  - Organizational budget controls',
+    '  - Usage visibility and analytics',
+    '  - Get API key at https://openrouter.ai/keys',
+    '',
     'Config files:',
     '  ~/.claude/settings.json          Claude Code settings (edited by this tool)',
-    '  ~/.gcl-switcher.json             Stores your z.ai API key',
+    '  ~/.gcl-switcher.json             Stores your API keys',
     '',
   ].join('\n'));
 }
@@ -242,13 +309,18 @@ switch (cmd) {
   case 'use':
     if (sub === 'glm')        useGlm();
     else if (sub === 'glm5')       useGlm5();
+    else if (sub === 'openrouter') useOpenRouter();
     else if (sub === 'lmstudio') useLmStudio();
     else if (sub === 'claude')    useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm5|lmstudio|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm5|openrouter|lmstudio|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
-    setKey(sub);     // "sub" is the positional arg here
+    setKey(sub);
+    break;
+
+  case 'set-openrouter-key':
+    setOpenRouterKey(sub);
     break;
 
   case 'help':
