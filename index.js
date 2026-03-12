@@ -53,6 +53,36 @@ const LM_STUDIO_ENV = {
 
 // OpenRouter defaults
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api';
+const OPENROUTER_DEFAULT_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'anthropic/claude-opus-4-20250514',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'anthropic/claude-sonnet-4-20250514',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'anthropic/claude-3-5-haiku-20241022',
+};
+const OPENROUTER_FREE_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'google/gemma-3-27b-it',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'google/gemma-3-27b-it',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'google/gemma-3-4b-it',
+};
+const OPENROUTER_GEMINI_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'google/gemini-2.5-pro',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'google/gemini-2.5-flash',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'google/gemini-2.0-flash-exp',
+};
+const OPENROUTER_GPT_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'openai/o3-mini',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'openai/gpt-4o',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'openai/gpt-4o-mini',
+};
+const OPENROUTER_STEPFUN_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'stepfun/step-3.5-flash:free',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'stepfun/step-3.5-flash:free',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'stepfun/step-3.5-flash:free',
+};
+const OPENROUTER_HUNTER_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'openrouter/hunter-alpha',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'openrouter/hunter-alpha',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'openrouter/hunter-alpha',
+};
 const OPENROUTER_ENV = {
   ANTHROPIC_BASE_URL: OPENROUTER_BASE_URL,
   ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
@@ -61,7 +91,7 @@ const OPENROUTER_ENV = {
 const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV), 'ANTHROPIC_BASE_URL'];
 const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
-const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY'];
+const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -80,7 +110,14 @@ function currentMode(settings) {
   if (url.includes('z.ai') && opus === 'glm-5') return 'glm5';
   if (url.includes('z.ai')) return 'glm';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
-  if (url.includes('openrouter.ai')) return 'openrouter';
+  if (url.includes('openrouter.ai')) {
+    if (opus.includes('gemma')) return 'openrouter-free';
+    if (opus.includes('gemini')) return 'openrouter-gemini';
+    if (opus.includes('openai') || opus.includes('o3') || opus.includes('gpt')) return 'openrouter-gpt';
+    if (opus.includes('stepfun')) return 'openrouter-stepfun';
+    if (opus.includes('hunter')) return 'openrouter-hunter';
+    return 'openrouter';
+  }
   return 'claude';
 }
 
@@ -107,12 +144,23 @@ function status() {
     console.log('Active mode: LM Studio (local)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Token    : ' + (settings.env.ANTHROPIC_AUTH_TOKEN || '(none)'));
-  } else if (mode === 'openrouter') {
-    console.log('Active mode: OpenRouter');
+  } else if (mode.startsWith('openrouter')) {
+    const tierNames = {
+      'openrouter': 'Claude',
+      'openrouter-free': 'Free (Gemma)',
+      'openrouter-gemini': 'Gemini',
+      'openrouter-gpt': 'GPT',
+      'openrouter-stepfun': 'StepFun',
+      'openrouter-hunter': 'Hunter',
+    };
+    console.log('Active mode: OpenRouter (' + (tierNames[mode] || 'Claude') + ')');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     const k = settings.env.ANTHROPIC_AUTH_TOKEN || '';
     if (k) console.log('  API key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
     else console.log('  API key  : (none)');
+    console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || OPENROUTER_DEFAULT_MODELS.ANTHROPIC_DEFAULT_OPUS_MODEL));
+    console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || OPENROUTER_DEFAULT_MODELS.ANTHROPIC_DEFAULT_SONNET_MODEL));
+    console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || OPENROUTER_DEFAULT_MODELS.ANTHROPIC_DEFAULT_HAIKU_MODEL));
   } else {
     console.log('Active mode: Claude (native)');
   }
@@ -206,7 +254,7 @@ function useClaude() {
   console.log('Switched to Claude (native). Restart Claude Code to apply.');
 }
 
-function useOpenRouter() {
+function useOpenRouter(tier = 'default') {
   const config = readJson(CONFIG_PATH);
   const key    = config.openrouterApiKey;
 
@@ -226,8 +274,26 @@ function useOpenRouter() {
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, OPENROUTER_ENV);
 
+  // Select models based on tier
+  const tierModels = {
+    'free': OPENROUTER_FREE_MODELS,
+    'gemini': OPENROUTER_GEMINI_MODELS,
+    'gpt': OPENROUTER_GPT_MODELS,
+    'stepfun': OPENROUTER_STEPFUN_MODELS,
+    'hunter': OPENROUTER_HUNTER_MODELS,
+  };
+
+  if (tierModels[tier]) {
+    Object.assign(settings.env, tierModels[tier]);
+  } else if (config.openrouterModels) {
+    Object.assign(settings.env, config.openrouterModels);
+  } else {
+    Object.assign(settings.env, OPENROUTER_DEFAULT_MODELS);
+  }
+
   writeJson(SETTINGS_PATH, settings);
-  console.log('Switched to OpenRouter. Restart Claude Code to apply.');
+  const tierName = tier === 'default' ? '' : ' (' + tier + ')';
+  console.log('Switched to OpenRouter' + tierName + '. Restart Claude Code to apply.');
 }
 
 function setKey(key) {
@@ -252,6 +318,34 @@ function setOpenRouterKey(key) {
   console.log('OpenRouter API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
 }
 
+function setOpenRouterModels(tier, model) {
+  if (!tier || !model) {
+    console.error('Usage: gcl-switcher set-openrouter-models <opus|sonnet|haiku> <model_id>');
+    console.error('');
+    console.error('Examples:');
+    console.error('  gcl-switcher set-openrouter-models opus anthropic/claude-opus-4-20250514');
+    console.error('  gcl-switcher set-openrouter-models sonnet anthropic/claude-sonnet-4-20250514');
+    console.error('  gcl-switcher set-openrouter-models haiku anthropic/claude-3-5-haiku-20241022');
+    process.exit(1);
+  }
+
+  const validTiers = ['opus', 'sonnet', 'haiku'];
+  if (!validTiers.includes(tier)) {
+    console.error('Invalid tier. Must be one of: opus, sonnet, haiku');
+    process.exit(1);
+  }
+
+  const config = readJson(CONFIG_PATH);
+  config.openrouterModels = config.openrouterModels || {};
+
+  const envKey = 'ANTHROPIC_DEFAULT_' + tier.toUpperCase() + '_MODEL';
+  config.openrouterModels[envKey] = model;
+
+  writeJson(CONFIG_PATH, config);
+  console.log('OpenRouter ' + tier + ' model set to: ' + model);
+  console.log('Run "gcl-switcher use openrouter" to apply.');
+}
+
 function help() {
   console.log([
     '',
@@ -261,11 +355,12 @@ function help() {
     '  gcl-switcher status                      Show active mode and settings',
     '  gcl-switcher use glm                     Switch to GLM (z.ai)',
     '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
-    '  gcl-switcher use openrouter              Switch to OpenRouter',
+    '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local)',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
     '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
+    '  gcl-switcher set-openrouter-models <tier> <model>  Set custom model',
     '  gcl-switcher help                        Show this help',
     '',
     'Quickstart (GLM):',
@@ -274,7 +369,12 @@ function help() {
     '',
     'Quickstart (OpenRouter):',
     '  gcl-switcher set-openrouter-key sk-or-xx  # save key once',
-    '  gcl-switcher use openrouter               # activate OpenRouter',
+    '  gcl-switcher use openrouter               # Claude models (default)',
+    '  gcl-switcher use openrouter free          # Free models (Gemma)',
+    '  gcl-switcher use openrouter gemini        # Google Gemini',
+    '  gcl-switcher use openrouter gpt           # OpenAI GPT',
+    '  gcl-switcher use openrouter stepfun       # StepFun',
+    '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
     '',
@@ -283,6 +383,14 @@ function help() {
     '  - SOTA open-weight model for coding',
     '  - Optimized for complex systems & agents',
     '  - Extended timeout (5min) for long code gen',
+    '',
+    'OpenRouter Tiers:',
+    '  claude   - Anthropic Claude (default)',
+    '  free     - Google Gemma (free tier)',
+    '  gemini   - Google Gemini 2.5',
+    '  gpt      - OpenAI GPT-4o / o3-mini',
+    '  stepfun  - StepFun Generation',
+    '  hunter   - OpenRouter Hunter Alpha',
     '',
     'OpenRouter Features:',
     '  - Provider failover for high availability',
@@ -299,7 +407,7 @@ function help() {
 
 // ── dispatch ───────────────────────────────────────────────────────────────
 
-const [,, cmd, sub] = process.argv;
+const [,, cmd, sub, arg3] = process.argv;
 
 switch (cmd) {
   case 'status':
@@ -309,10 +417,10 @@ switch (cmd) {
   case 'use':
     if (sub === 'glm')        useGlm();
     else if (sub === 'glm5')       useGlm5();
-    else if (sub === 'openrouter') useOpenRouter();
+    else if (sub === 'openrouter') useOpenRouter(arg3);
     else if (sub === 'lmstudio') useLmStudio();
     else if (sub === 'claude')    useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm5|openrouter|lmstudio|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm5|openrouter [tier]|lmstudio|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
@@ -321,6 +429,10 @@ switch (cmd) {
 
   case 'set-openrouter-key':
     setOpenRouterKey(sub);
+    break;
+
+  case 'set-openrouter-models':
+    setOpenRouterModels(sub, arg3);
     break;
 
   case 'help':
