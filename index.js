@@ -254,6 +254,10 @@ function useClaude() {
   console.log('Switched to Claude (native). Restart Claude Code to apply.');
 }
 
+function useStepfun() {
+  useOpenRouter('stepfun');
+}
+
 function useOpenRouter(tier = 'default') {
   const config = readJson(CONFIG_PATH);
   const key    = config.openrouterApiKey;
@@ -356,6 +360,7 @@ function help() {
     '  gcl-switcher use glm                     Switch to GLM (z.ai)',
     '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
     '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter)',
+    '  gcl-switcher use stepfun                 Switch to StepFun (OpenRouter)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local)',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
@@ -373,7 +378,7 @@ function help() {
     '  gcl-switcher use openrouter free          # Free models (Gemma)',
     '  gcl-switcher use openrouter gemini        # Google Gemini',
     '  gcl-switcher use openrouter gpt           # OpenAI GPT',
-    '  gcl-switcher use openrouter stepfun       # StepFun',
+    '  gcl-switcher use stepfun                  # StepFun (shortcut)',
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
@@ -418,9 +423,10 @@ switch (cmd) {
     if (sub === 'glm')        useGlm();
     else if (sub === 'glm5')       useGlm5();
     else if (sub === 'openrouter') useOpenRouter(arg3);
+    else if (sub === 'stepfun')    useStepfun();
     else if (sub === 'lmstudio') useLmStudio();
     else if (sub === 'claude')    useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm5|openrouter [tier]|lmstudio|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm5|openrouter [tier]|stepfun|lmstudio|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
