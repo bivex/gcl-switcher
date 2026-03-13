@@ -3,7 +3,9 @@
     "allow": [
       "Bash(git init:*)",
       "WebSearch",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(find ~ -maxdepth 3 -name \"*opencode*\" -type d 2>/dev/null | head -10)",
+      "Bash(ls -la ~/.config/opencode/*.json)"
     ]
   }
 }
