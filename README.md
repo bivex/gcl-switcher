@@ -14,8 +14,14 @@ npm install -g .
 # Save your z.ai API key once
 gcl-switcher set-key sk-xxxxxxxxxxxxxxxx
 
-# Switch to GLM-5 (recommended for coding)
+# Switch to GLM-5.1 (recommended default on z.ai)
+gcl-switcher use glm51
+
+# Switch to GLM-5
 gcl-switcher use glm5
+
+# Switch to GLM-5-Turbo
+gcl-switcher use glm5turbo
 
 # Switch to GLM-4.7
 gcl-switcher use glm
@@ -45,7 +51,9 @@ gcl-switcher status
 |---|---|
 | `gcl-switcher status` | Show active mode and current settings |
 | `gcl-switcher use glm` | Switch to GLM-4.7 (z.ai) |
+| `gcl-switcher use glm51` | Switch to GLM-5.1 (z.ai, latest on all GLM Coding plans) |
 | `gcl-switcher use glm5` | Switch to GLM-5 (z.ai, coding optimized) |
+| `gcl-switcher use glm5turbo` | Switch to GLM-5-Turbo (z.ai, faster premium profile) |
 | `gcl-switcher use openrouter [tier]` | Switch to OpenRouter (claude\|free\|gemini\|gpt\|stepfun\|hunter) |
 | `gcl-switcher use lmstudio` | Switch to LM Studio (local) |
 | `gcl-switcher use claude` | Switch to native Claude |
@@ -70,6 +78,22 @@ gcl-switcher status
 }
 ```
 
+**`use glm51`** uses `glm-5.1` for all model tiers with coding optimizations:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "<your_key>",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.1",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5.1",
+    "API_TIMEOUT_MS": "300000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "true"
+  }
+}
+```
+
 **`use glm5`** uses `glm-5` for all model tiers with coding optimizations:
 
 ```json
@@ -80,6 +104,22 @@ gcl-switcher status
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5",
+    "API_TIMEOUT_MS": "300000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "true"
+  }
+}
+```
+
+**`use glm5turbo`** uses `glm-5-turbo` for all model tiers with coding optimizations:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "<your_key>",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5-turbo",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5-turbo",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5-turbo",
     "API_TIMEOUT_MS": "300000",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "true"
   }
@@ -152,15 +192,16 @@ Browse available models at [openrouter.ai/models](https://openrouter.ai/models)
 | `~/.claude/settings.json` | Claude Code settings (edited by this tool) |
 | `~/.gcl-switcher.json` | Stores your API keys and OpenRouter model preferences |
 
-## GLM-5 for Coding
+## GLM for Coding
 
-GLM-5 is specifically optimized for coding tasks with `gcl-switcher use glm5`:
+Latest z.ai coding modes supported by `gcl-switcher`:
 
+- **`glm51`** - `GLM-5.1`, best default choice and available on all GLM Coding plans
+- **`glm5`** - `GLM-5`, higher-end coding model
+- **`glm5turbo`** - `GLM-5-Turbo`, faster premium variant
 - **200K context window** - Handle large codebases and long conversations
 - **128K max output** - Generate extensive code files in one go
-- **SOTA open-weight model** - Best-in-class coding performance among open models
 - **Extended 5-minute timeout** - For complex code generation tasks
-- **Disabled telemetry** - Faster responses, less overhead
 
 GLM-5 achieves performance comparable to Claude Opus 4.5 on:
 - SWE-bench Verified: 77.8 (vs Opus 4.5's 80.9)

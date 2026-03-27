@@ -43,6 +43,24 @@ const GLM5_ENV = {
   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',  // faster responses
 };
 
+const GLM51_ENV = {
+  ANTHROPIC_BASE_URL:              GLM_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'glm-5.1',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5.1',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'glm-5.1',
+  API_TIMEOUT_MS:                  '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const GLM5_TURBO_ENV = {
+  ANTHROPIC_BASE_URL:              GLM_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'glm-5-turbo',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5-turbo',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'glm-5-turbo',
+  API_TIMEOUT_MS:                  '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
 // LM Studio (local) defaults
 const LM_STUDIO_BASE_URL = 'http://localhost:1234';
 const LM_STUDIO_TOKEN = 'lm-studio';
@@ -90,6 +108,8 @@ const OPENROUTER_ENV = {
 
 const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV), 'ANTHROPIC_BASE_URL'];
 const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const GLM51_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM51_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const GLM5_TURBO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_TURBO_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
 const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
 
@@ -107,6 +127,8 @@ function writeJson(p, data) {
 function currentMode(settings) {
   const url = settings?.env?.ANTHROPIC_BASE_URL ?? '';
   const opus = settings?.env?.ANTHROPIC_DEFAULT_OPUS_MODEL ?? '';
+  if (url.includes('z.ai') && opus === 'glm-5.1') return 'glm51';
+  if (url.includes('z.ai') && opus === 'glm-5-turbo') return 'glm5turbo';
   if (url.includes('z.ai') && opus === 'glm-5') return 'glm5';
   if (url.includes('z.ai')) return 'glm';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
@@ -128,7 +150,19 @@ function status() {
   const config   = readJson(CONFIG_PATH);
   const mode     = currentMode(settings);
 
-  if (mode === 'glm5') {
+  if (mode === 'glm51') {
+    console.log('Active mode: GLM-5.1 (z.ai)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-5.1'));
+    console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'glm-5.1'));
+    console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || 'glm-5.1'));
+  } else if (mode === 'glm5turbo') {
+    console.log('Active mode: GLM-5-Turbo (z.ai)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-5-turbo'));
+    console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'glm-5-turbo'));
+    console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || 'glm-5-turbo'));
+  } else if (mode === 'glm5') {
     console.log('Active mode: GLM-5 (z.ai)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-5'));
@@ -168,7 +202,7 @@ function status() {
   if (config.glmApiKey) {
     const k = config.glmApiKey;
     console.log('  GLM key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
-  } else if (mode === 'glm' || mode === 'glm5') {
+  } else if (mode === 'glm' || mode === 'glm5' || mode === 'glm51' || mode === 'glm5turbo') {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
   }
 }
@@ -185,8 +219,10 @@ function useGlm() {
   const settings = readJson(SETTINGS_PATH);
   settings.env   = settings.env ?? {};
 
-  // clear any GLM5, LM Studio, and OpenRouter keys before switching
+  // clear any GLM-5 variants, LM Studio, and OpenRouter keys before switching
   for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
@@ -209,8 +245,10 @@ function useGlm5() {
   const settings = readJson(SETTINGS_PATH);
   settings.env   = settings.env ?? {};
 
-  // clear any GLM, LM Studio, and OpenRouter keys before switching
+  // clear any other GLM mode, LM Studio, and OpenRouter keys before switching
   for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
@@ -221,13 +259,65 @@ function useGlm5() {
   console.log('Switched to GLM-5 (z.ai). Restart Claude Code to apply.');
 }
 
+function useGlm51() {
+  const config = readJson(CONFIG_PATH);
+  const key    = config.glmApiKey;
+
+  if (!key) {
+    console.error('No API key saved. Run first:\n  gcl-switcher set-key <your_z.ai_api_key>');
+    process.exit(1);
+  }
+
+  const settings = readJson(SETTINGS_PATH);
+  settings.env   = settings.env ?? {};
+
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
+
+  settings.env.ANTHROPIC_AUTH_TOKEN = key;
+  Object.assign(settings.env, GLM51_ENV);
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to GLM-5.1 (z.ai). Restart Claude Code to apply.');
+}
+
+function useGlm5Turbo() {
+  const config = readJson(CONFIG_PATH);
+  const key    = config.glmApiKey;
+
+  if (!key) {
+    console.error('No API key saved. Run first:\n  gcl-switcher set-key <your_z.ai_api_key>');
+    process.exit(1);
+  }
+
+  const settings = readJson(SETTINGS_PATH);
+  settings.env   = settings.env ?? {};
+
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
+
+  settings.env.ANTHROPIC_AUTH_TOKEN = key;
+  Object.assign(settings.env, GLM5_TURBO_ENV);
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to GLM-5-Turbo (z.ai). Restart Claude Code to apply.');
+}
+
 function useLmStudio() {
   const settings = readJson(SETTINGS_PATH);
   settings.env = settings.env ?? {};
 
-  // clear GLM, GLM5, and OpenRouter keys when enabling LM Studio
+  // clear GLM modes and OpenRouter keys when enabling LM Studio
   for (const k of GLM_KEYS) delete settings.env[k];
   for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   Object.assign(settings.env, LM_STUDIO_ENV);
@@ -247,6 +337,8 @@ function useClaude() {
 
   for (const k of GLM_KEYS) delete settings.env[k];
   for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
@@ -270,9 +362,11 @@ function useOpenRouter(tier = 'default') {
   const settings = readJson(SETTINGS_PATH);
   settings.env   = settings.env ?? {};
 
-  // clear GLM, GLM5, and LM Studio keys before switching
+  // clear GLM modes and LM Studio keys before switching
   for (const k of GLM_KEYS) delete settings.env[k];
   for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
@@ -358,7 +452,9 @@ function help() {
     'Usage:',
     '  gcl-switcher status                      Show active mode and settings',
     '  gcl-switcher use glm                     Switch to GLM (z.ai)',
+    '  gcl-switcher use glm51                   Switch to GLM-5.1 (latest for all GLM plans)',
     '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
+    '  gcl-switcher use glm5turbo               Switch to GLM-5-Turbo (fast high-end)',
     '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter)',
     '  gcl-switcher use stepfun                 Switch to StepFun (OpenRouter)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local)',
@@ -370,7 +466,9 @@ function help() {
     '',
     'Quickstart (GLM):',
     '  gcl-switcher set-key sk-xxxxxxx          # save key once',
+    '  gcl-switcher use glm51                   # activate GLM-5.1 (best default on z.ai)',
     '  gcl-switcher use glm5                    # activate GLM-5 (best for coding)',
+    '  gcl-switcher use glm5turbo               # activate GLM-5-Turbo',
     '',
     'Quickstart (OpenRouter):',
     '  gcl-switcher set-openrouter-key sk-or-xx  # save key once',
@@ -383,10 +481,10 @@ function help() {
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
     '',
-    'GLM-5 Coding Features:',
+    'GLM Coding Features:',
+    '  - GLM-5.1 available on all GLM Coding plans',
+    '  - GLM-5-Turbo for faster premium runs',
     '  - 200K context, 128K max output',
-    '  - SOTA open-weight model for coding',
-    '  - Optimized for complex systems & agents',
     '  - Extended timeout (5min) for long code gen',
     '',
     'OpenRouter Tiers:',
@@ -420,13 +518,15 @@ switch (cmd) {
     break;
 
   case 'use':
-    if (sub === 'glm')        useGlm();
+    if (sub === 'glm')             useGlm();
+    else if (sub === 'glm51')      useGlm51();
     else if (sub === 'glm5')       useGlm5();
+    else if (sub === 'glm5turbo')  useGlm5Turbo();
     else if (sub === 'openrouter') useOpenRouter(arg3);
     else if (sub === 'stepfun')    useStepfun();
     else if (sub === 'lmstudio') useLmStudio();
     else if (sub === 'claude')    useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm5|openrouter [tier]|stepfun|lmstudio|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|lmstudio|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
