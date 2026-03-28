@@ -101,6 +101,11 @@ const OPENROUTER_HUNTER_MODELS = {
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'openrouter/hunter-alpha',
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'openrouter/hunter-alpha',
 };
+const OPENROUTER_NEMOTRON_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'nvidia/nemotron-3-super-120b-a12b:free',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'nvidia/nemotron-3-super-120b-a12b:free',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'nvidia/nemotron-3-super-120b-a12b:free',
+};
 const OPENROUTER_ENV = {
   ANTHROPIC_BASE_URL: OPENROUTER_BASE_URL,
   ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
@@ -138,6 +143,7 @@ function currentMode(settings) {
     if (opus.includes('openai') || opus.includes('o3') || opus.includes('gpt')) return 'openrouter-gpt';
     if (opus.includes('stepfun')) return 'openrouter-stepfun';
     if (opus.includes('hunter')) return 'openrouter-hunter';
+    if (opus.includes('nemotron')) return 'openrouter-nemotron';
     return 'openrouter';
   }
   return 'claude';
@@ -186,6 +192,7 @@ function status() {
       'openrouter-gpt': 'GPT',
       'openrouter-stepfun': 'StepFun',
       'openrouter-hunter': 'Hunter',
+      'openrouter-nemotron': 'Nemotron',
     };
     console.log('Active mode: OpenRouter (' + (tierNames[mode] || 'Claude') + ')');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
@@ -350,6 +357,10 @@ function useStepfun() {
   useOpenRouter('stepfun');
 }
 
+function useNemotron() {
+  useOpenRouter('nemotron');
+}
+
 function useOpenRouter(tier = 'default') {
   const config = readJson(CONFIG_PATH);
   const key    = config.openrouterApiKey;
@@ -379,6 +390,7 @@ function useOpenRouter(tier = 'default') {
     'gpt': OPENROUTER_GPT_MODELS,
     'stepfun': OPENROUTER_STEPFUN_MODELS,
     'hunter': OPENROUTER_HUNTER_MODELS,
+    'nemotron': OPENROUTER_NEMOTRON_MODELS,
   };
 
   if (tierModels[tier]) {
@@ -455,8 +467,9 @@ function help() {
     '  gcl-switcher use glm51                   Switch to GLM-5.1 (latest for all GLM plans)',
     '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
     '  gcl-switcher use glm5turbo               Switch to GLM-5-Turbo (fast high-end)',
-    '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter)',
-    '  gcl-switcher use stepfun                 Switch to StepFun (OpenRouter)',
+    '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter|nemotron)',
+    '  gcl-switcher use stepfun                 Switch to StepFun (shortcut)',
+    '  gcl-switcher use nemotron                Switch to Nemotron (shortcut)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local)',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
@@ -477,6 +490,7 @@ function help() {
     '  gcl-switcher use openrouter gemini        # Google Gemini',
     '  gcl-switcher use openrouter gpt           # OpenAI GPT',
     '  gcl-switcher use stepfun                  # StepFun (shortcut)',
+    '  gcl-switcher use nemotron                 # Nemotron (shortcut)',
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
@@ -494,6 +508,7 @@ function help() {
     '  gpt      - OpenAI GPT-4o / o3-mini',
     '  stepfun  - StepFun Generation',
     '  hunter   - OpenRouter Hunter Alpha',
+    '  nemotron - Nvidia Nemotron 3 Super',
     '',
     'OpenRouter Features:',
     '  - Provider failover for high availability',
@@ -524,6 +539,7 @@ switch (cmd) {
     else if (sub === 'glm5turbo')  useGlm5Turbo();
     else if (sub === 'openrouter') useOpenRouter(arg3);
     else if (sub === 'stepfun')    useStepfun();
+    else if (sub === 'nemotron')   useNemotron();
     else if (sub === 'lmstudio') useLmStudio();
     else if (sub === 'claude')    useClaude();
     else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|lmstudio|claude>'); process.exit(1); }
