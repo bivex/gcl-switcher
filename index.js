@@ -111,6 +111,11 @@ const OPENROUTER_MINIMAX_MODELS = {
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'minimax/minimax-m2.5:free',
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'minimax/minimax-m2.5:free',
 };
+const OPENROUTER_ARCEE_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'arcee-ai/trinity-large-preview:free',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'arcee-ai/trinity-large-preview:free',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'arcee-ai/trinity-large-preview:free',
+};
 const OPENROUTER_ENV = {
   ANTHROPIC_BASE_URL: OPENROUTER_BASE_URL,
   ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
@@ -150,6 +155,7 @@ function currentMode(settings) {
     if (opus.includes('hunter')) return 'openrouter-hunter';
     if (opus.includes('nemotron')) return 'openrouter-nemotron';
     if (opus.includes('minimax')) return 'openrouter-minimax';
+    if (opus.includes('arcee')) return 'openrouter-arcee';
     return 'openrouter';
   }
   return 'claude';
@@ -200,6 +206,7 @@ function status() {
       'openrouter-hunter': 'Hunter',
       'openrouter-nemotron': 'Nemotron',
       'openrouter-minimax': 'Minimax',
+      'openrouter-arcee': 'Arcee',
     };
     console.log('Active mode: OpenRouter (' + (tierNames[mode] || 'Claude') + ')');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
@@ -372,6 +379,10 @@ function useMinimax() {
   useOpenRouter('minimax');
 }
 
+function useArcee() {
+  useOpenRouter('arcee');
+}
+
 function useOpenRouter(tier = 'default') {
   const config = readJson(CONFIG_PATH);
   const key    = config.openrouterApiKey;
@@ -403,6 +414,7 @@ function useOpenRouter(tier = 'default') {
     'hunter': OPENROUTER_HUNTER_MODELS,
     'nemotron': OPENROUTER_NEMOTRON_MODELS,
     'minimax': OPENROUTER_MINIMAX_MODELS,
+    'arcee': OPENROUTER_ARCEE_MODELS,
   };
 
   if (tierModels[tier]) {
@@ -483,6 +495,7 @@ function help() {
     '  gcl-switcher use stepfun                 Switch to StepFun (shortcut)',
     '  gcl-switcher use nemotron                Switch to Nemotron (shortcut)',
     '  gcl-switcher use minimax                 Switch to Minimax (shortcut)',
+    '  gcl-switcher use arcee                   Switch to Arcee (shortcut)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local)',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
@@ -505,6 +518,7 @@ function help() {
     '  gcl-switcher use stepfun                  # StepFun (shortcut)',
     '  gcl-switcher use nemotron                 # Nemotron (shortcut)',
     '  gcl-switcher use minimax                  # Minimax (shortcut)',
+    '  gcl-switcher use arcee                    # Arcee (shortcut)',
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
@@ -524,6 +538,7 @@ function help() {
     '  hunter   - OpenRouter Hunter Alpha',
     '  nemotron - Nvidia Nemotron 3 Super',
     '  minimax  - Minimax M2.5',
+    '  arcee    - Arcee Trinity',
     '',
     'OpenRouter Features:',
     '  - Provider failover for high availability',
@@ -556,9 +571,10 @@ switch (cmd) {
     else if (sub === 'stepfun')    useStepfun();
     else if (sub === 'nemotron')   useNemotron();
     else if (sub === 'minimax')    useMinimax();
+    else if (sub === 'arcee')      useArcee();
     else if (sub === 'lmstudio') useLmStudio();
     else if (sub === 'claude')    useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|lmstudio|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|lmstudio|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
