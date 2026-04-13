@@ -69,6 +69,16 @@ const LM_STUDIO_ENV = {
   ANTHROPIC_MODEL:    'default',
 };
 
+// DFlash (local MLX) defaults
+const DFLASH_BASE_URL = 'http://localhost:8000/v1';
+const DFLASH_TOKEN    = 'dflash-token';
+const DFLASH_ENV = {
+  ANTHROPIC_BASE_URL:              DFLASH_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'dflash-mlx',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'dflash-mlx',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'dflash-mlx',
+};
+
 // OpenRouter defaults
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api';
 const OPENROUTER_DEFAULT_MODELS = {
@@ -126,6 +136,7 @@ const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_
 const GLM51_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM51_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const GLM5_TURBO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_TURBO_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
+const DFLASH_KEYS    = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
 const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -146,6 +157,7 @@ function currentMode(settings) {
   if (url.includes('z.ai') && opus === 'glm-5-turbo') return 'glm5turbo';
   if (url.includes('z.ai') && opus === 'glm-5') return 'glm5';
   if (url.includes('z.ai')) return 'glm';
+  if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) return 'dflash';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
   if (url.includes('openrouter.ai')) {
     if (opus.includes('gemma')) return 'openrouter-free';
@@ -192,10 +204,13 @@ function status() {
     console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-4.7'));
     console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'glm-4.7'));
     console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || 'glm-4.5-air'));
-  } else if (mode === 'lmstudio') {
     console.log('Active mode: LM Studio (local)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Token    : ' + (settings.env.ANTHROPIC_AUTH_TOKEN || '(none)'));
+  } else if (mode === 'dflash') {
+    console.log('Active mode: DFlash (local MLX)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Model    : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL || 'dflash-mlx'));
   } else if (mode.startsWith('openrouter')) {
     const tierNames = {
       'openrouter': 'Claude',
@@ -245,6 +260,7 @@ function useGlm() {
   for (const k of GLM51_KEYS) delete settings.env[k];
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
@@ -266,11 +282,11 @@ function useGlm5() {
   const settings = readJson(SETTINGS_PATH);
   settings.env   = settings.env ?? {};
 
-  // clear any other GLM mode, LM Studio, and OpenRouter keys before switching
   for (const k of GLM_KEYS) delete settings.env[k];
   for (const k of GLM51_KEYS) delete settings.env[k];
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
@@ -296,6 +312,7 @@ function useGlm51() {
   for (const k of GLM5_KEYS) delete settings.env[k];
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
@@ -321,6 +338,7 @@ function useGlm5Turbo() {
   for (const k of GLM5_KEYS) delete settings.env[k];
   for (const k of GLM51_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
@@ -339,6 +357,7 @@ function useLmStudio() {
   for (const k of GLM5_KEYS) delete settings.env[k];
   for (const k of GLM51_KEYS) delete settings.env[k];
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   Object.assign(settings.env, LM_STUDIO_ENV);
@@ -347,6 +366,24 @@ function useLmStudio() {
 
   writeJson(SETTINGS_PATH, settings);
   console.log('Switched to LM Studio (local). Restart Claude Code to apply.');
+}
+
+function useDflash() {
+  const settings = readJson(SETTINGS_PATH);
+  settings.env = settings.env ?? {};
+
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
+
+  Object.assign(settings.env, DFLASH_ENV);
+  settings.env.ANTHROPIC_AUTH_TOKEN = DFLASH_TOKEN;
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to DFlash (local MLX). Restart Claude Code to apply.');
 }
 
 function useClaude() {
@@ -361,6 +398,7 @@ function useClaude() {
   for (const k of GLM51_KEYS) delete settings.env[k];
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   writeJson(SETTINGS_PATH, settings);
@@ -401,6 +439,7 @@ function useOpenRouter(tier = 'default') {
   for (const k of GLM51_KEYS) delete settings.env[k];
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, OPENROUTER_ENV);
@@ -496,7 +535,8 @@ function help() {
     '  gcl-switcher use nemotron                Switch to Nemotron (shortcut)',
     '  gcl-switcher use minimax                 Switch to Minimax (shortcut)',
     '  gcl-switcher use arcee                   Switch to Arcee (shortcut)',
-    '  gcl-switcher use lmstudio                Switch to LM Studio (local)',
+    '  gcl-switcher use lmstudio                Switch to LM Studio (local:1234)',
+    '  gcl-switcher use dflash                  Switch to DFlash (local:8000 mlx)',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
     '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
@@ -572,9 +612,10 @@ switch (cmd) {
     else if (sub === 'nemotron')   useNemotron();
     else if (sub === 'minimax')    useMinimax();
     else if (sub === 'arcee')      useArcee();
-    else if (sub === 'lmstudio') useLmStudio();
-    else if (sub === 'claude')    useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|lmstudio|claude>'); process.exit(1); }
+    else if (sub === 'lmstudio')   useLmStudio();
+    else if (sub === 'dflash')     useDflash();
+    else if (sub === 'claude')     useClaude();
+    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|lmstudio|dflash|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
