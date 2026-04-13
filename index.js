@@ -74,9 +74,13 @@ const DFLASH_BASE_URL = 'http://localhost:8000/v1';
 const DFLASH_TOKEN    = 'dflash-token';
 const DFLASH_ENV = {
   ANTHROPIC_BASE_URL:              DFLASH_BASE_URL,
+  ANTHROPIC_MODEL:                 'dflash-mlx',
   ANTHROPIC_DEFAULT_OPUS_MODEL:   'dflash-mlx',
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'dflash-mlx',
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'dflash-mlx',
+  // Coding optimizations
+  API_TIMEOUT_MS:                  '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
 };
 
 // OpenRouter defaults
@@ -136,7 +140,7 @@ const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_
 const GLM51_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM51_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const GLM5_TURBO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_TURBO_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
-const DFLASH_KEYS    = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
+const DFLASH_KEYS    = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -204,6 +208,7 @@ function status() {
     console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-4.7'));
     console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'glm-4.7'));
     console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || 'glm-4.5-air'));
+  } else if (mode === 'lmstudio') {
     console.log('Active mode: LM Studio (local)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Token    : ' + (settings.env.ANTHROPIC_AUTH_TOKEN || '(none)'));
@@ -369,6 +374,7 @@ function useLmStudio() {
 }
 
 function useDflash() {
+  const config   = readJson(CONFIG_PATH);
   const settings = readJson(SETTINGS_PATH);
   settings.env = settings.env ?? {};
 
@@ -380,10 +386,26 @@ function useDflash() {
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
 
   Object.assign(settings.env, DFLASH_ENV);
+  
+  if (config.dflashBaseUrl) {
+    settings.env.ANTHROPIC_BASE_URL = config.dflashBaseUrl;
+  }
+
+  // Apply custom model if saved
+  if (config.dflashModel) {
+    settings.env.ANTHROPIC_MODEL = config.dflashModel;
+    settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.dflashModel;
+    settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL = config.dflashModel;
+    settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = config.dflashModel;
+  }
+
   settings.env.ANTHROPIC_AUTH_TOKEN = DFLASH_TOKEN;
+  settings.env.ANTHROPIC_API_KEY    = DFLASH_TOKEN;
 
   writeJson(SETTINGS_PATH, settings);
   console.log('Switched to DFlash (local MLX). Restart Claude Code to apply.');
+  if (config.dflashBaseUrl) console.log('Using custom URL: ' + config.dflashBaseUrl);
+  if (config.dflashModel)   console.log('Using custom model: ' + config.dflashModel);
 }
 
 function useClaude() {
@@ -519,6 +541,44 @@ function setOpenRouterModels(tier, model) {
   console.log('Run "gcl-switcher use openrouter" to apply.');
 }
 
+function setDflashModel(model) {
+  if (!model) {
+    console.error('Usage: gcl-switcher set-dflash-model <model_id>');
+    console.error('Example: gcl-switcher set-dflash-model claude-3-5-sonnet-20241022');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.dflashModel = model;
+  writeJson(CONFIG_PATH, config);
+  console.log('DFlash model override set to: ' + model);
+  
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'dflash') {
+    useDflash();
+  } else {
+    console.log('Run "gcl-switcher use dflash" to apply.');
+  }
+}
+
+function setDflashUrl(url) {
+  if (!url) {
+    console.error('Usage: gcl-switcher set-dflash-url <url>');
+    console.error('Example: gcl-switcher set-dflash-url http://localhost:8001/v1');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.dflashBaseUrl = url;
+  writeJson(CONFIG_PATH, config);
+  console.log('DFlash Base URL set to: ' + url);
+  
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'dflash') {
+    useDflash();
+  } else {
+    console.log('Run "gcl-switcher use dflash" to apply.');
+  }
+}
+
 function help() {
   console.log([
     '',
@@ -541,6 +601,8 @@ function help() {
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
     '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
     '  gcl-switcher set-openrouter-models <tier> <model>  Set custom model',
+    '  gcl-switcher set-dflash-model <model_id> Set custom DFlash model',
+    '  gcl-switcher set-dflash-url <url>        Set custom DFlash URL',
     '  gcl-switcher help                        Show this help',
     '',
     'Quickstart (GLM):',
@@ -628,6 +690,14 @@ switch (cmd) {
 
   case 'set-openrouter-models':
     setOpenRouterModels(sub, arg3);
+    break;
+
+  case 'set-dflash-model':
+    setDflashModel(sub);
+    break;
+
+  case 'set-dflash-url':
+    setDflashUrl(sub);
     break;
 
   case 'help':
