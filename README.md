@@ -54,7 +54,7 @@ gcl-switcher status
 | `gcl-switcher use glm51` | Switch to GLM-5.1 (z.ai, latest on all GLM Coding plans) |
 | `gcl-switcher use glm5` | Switch to GLM-5 (z.ai, coding optimized) |
 | `gcl-switcher use glm5turbo` | Switch to GLM-5-Turbo (z.ai, faster premium profile) |
-| `gcl-switcher use openrouter [tier]` | Switch to OpenRouter (claude\|free\|gemini\|gpt\|stepfun\|hunter) |
+| `gcl-switcher use openrouter [tier]` | Switch to OpenRouter (claude\|free\|gemini\|gpt\|stepfun\|hunter\|elephant) |
 | `gcl-switcher use lmstudio` | Switch to LM Studio (local) |
 | `gcl-switcher use claude` | Switch to native Claude |
 | `gcl-switcher set-key <api_key>` | Save your z.ai API key |
@@ -153,14 +153,16 @@ Pre-configured model tiers for quick switching:
 | `gpt` | `o3-mini` | `gpt-4o` | `gpt-4o-mini` |
 | `stepfun` | `step-3.5-flash:free` | `step-3.5-flash:free` | `step-3.5-flash:free` |
 | `hunter` | `hunter-alpha` | `hunter-alpha` | `hunter-alpha` |
+| `elephant` | `elephant-alpha` | `elephant-alpha` | `elephant-alpha` |
 
 ```bash
 gcl-switcher use openrouter claude    # Claude models (default)
 gcl-switcher use openrouter free      # Free tier
 gcl-switcher use openrouter gemini    # Google Gemini
 gcl-switcher use openrouter gpt       # OpenAI GPT
-gcl-switcher use openrouter stepfun   # StepFun
+gcl-switcher use stepfun              # StepFun
 gcl-switcher use openrouter hunter    # Hunter Alpha
+gcl-switcher use elephant             # Elephant Alpha (free)
 ```
 
 ### Setting Custom OpenRouter Models
