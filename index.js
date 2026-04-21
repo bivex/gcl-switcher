@@ -61,6 +61,18 @@ const GLM5_TURBO_ENV = {
   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
 };
 
+// NVIDIA Kimi defaults
+const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
+const KIMI_ENV = {
+  ANTHROPIC_BASE_URL:              NVIDIA_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'moonshotai/kimi-k2.5',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'moonshotai/kimi-k2.5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'moonshotai/kimi-k2.5',
+  ANTHROPIC_CHAT_TEMPLATE_KWARGS: '{"thinking":true}',
+  API_TIMEOUT_MS:                  '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
 // LM Studio (local) defaults
 const LM_STUDIO_BASE_URL = 'http://localhost:1234';
 const LM_STUDIO_TOKEN = 'lm-studio';
@@ -147,6 +159,7 @@ const GLM5_TURBO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_TURBO_ENV),
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
 const DFLASH_KEYS    = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
+const KIMI_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(KIMI_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -166,6 +179,7 @@ function currentMode(settings) {
   if (url.includes('z.ai') && opus === 'glm-5-turbo') return 'glm5turbo';
   if (url.includes('z.ai') && opus === 'glm-5') return 'glm5';
   if (url.includes('z.ai')) return 'glm';
+  if (url.includes('nvidia.com')) return 'kimi';
   if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) return 'dflash';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
   if (url.includes('openrouter.ai')) {
@@ -222,6 +236,10 @@ function status() {
     console.log('Active mode: DFlash (local MLX)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Model    : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL || 'dflash-mlx'));
+  } else if (mode === 'kimi') {
+    console.log('Active mode: Kimi (NVIDIA)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Model    : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL || 'moonshotai/kimi-k2.5'));
   } else if (mode.startsWith('openrouter')) {
     const tierNames = {
       'openrouter': 'Claude',
@@ -250,6 +268,9 @@ function status() {
   if (config.glmApiKey) {
     const k = config.glmApiKey;
     console.log('  GLM key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
+  } else if (config.nvidiaApiKey) {
+    const k = config.nvidiaApiKey;
+    console.log('  NVIDIA key: ' + k.slice(0, 8) + '...' + k.slice(-4));
   } else if (mode === 'glm' || mode === 'glm5' || mode === 'glm51' || mode === 'glm5turbo') {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
   }
@@ -415,6 +436,34 @@ function useDflash() {
   if (config.dflashModel)   console.log('Using custom model: ' + config.dflashModel);
 }
 
+function useKimi() {
+  const config = readJson(CONFIG_PATH);
+  const key    = config.nvidiaApiKey;
+
+  if (!key) {
+    console.error('No NVIDIA API key saved. Run first:\n  gcl-switcher set-nvidia-key <your_nvidia_api_key>');
+    process.exit(1);
+  }
+
+  const settings = readJson(SETTINGS_PATH);
+  settings.env   = settings.env ?? {};
+
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
+
+  settings.env.ANTHROPIC_AUTH_TOKEN = key;
+  settings.env.ANTHROPIC_API_KEY = key;
+  Object.assign(settings.env, KIMI_ENV);
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to Kimi (NVIDIA). Restart Claude Code to apply.');
+}
+
 function useClaude() {
   const settings = readJson(SETTINGS_PATH);
   if (!settings.env) {
@@ -429,6 +478,7 @@ function useClaude() {
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of KIMI_KEYS) delete settings.env[k];
 
   writeJson(SETTINGS_PATH, settings);
   console.log('Switched to Claude (native). Restart Claude Code to apply.');
@@ -525,6 +575,17 @@ function setOpenRouterKey(key) {
   console.log('OpenRouter API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
 }
 
+function setNvidiaKey(key) {
+  if (!key) {
+    console.error('Usage: gcl-switcher set-nvidia-key <api_key>');
+    process.exit(1);
+  }
+  const config   = readJson(CONFIG_PATH);
+  config.nvidiaApiKey = key;
+  writeJson(CONFIG_PATH, config);
+  console.log('NVIDIA API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
+}
+
 function setOpenRouterModels(tier, model) {
   if (!tier || !model) {
     console.error('Usage: gcl-switcher set-openrouter-models <opus|sonnet|haiku> <model_id>');
@@ -610,9 +671,11 @@ function help() {
     '  gcl-switcher use elephant                Switch to Elephant Alpha (shortcut)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local:1234)',
     '  gcl-switcher use dflash                  Switch to DFlash (local:8000 mlx)',
+    '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA)',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
     '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
+    '  gcl-switcher set-nvidia-key <key>        Save your NVIDIA API key',
     '  gcl-switcher set-openrouter-models <tier> <model>  Set custom model',
     '  gcl-switcher set-dflash-model <model_id> Set custom DFlash model',
     '  gcl-switcher set-dflash-url <url>        Set custom DFlash URL',
@@ -692,6 +755,7 @@ switch (cmd) {
     else if (sub === 'elephant')   useElephant();
     else if (sub === 'lmstudio')   useLmStudio();
     else if (sub === 'dflash')     useDflash();
+    else if (sub === 'kimi')       useKimi();
     else if (sub === 'claude')     useClaude();
     else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|lmstudio|dflash|claude>'); process.exit(1); }
     break;
@@ -702,6 +766,10 @@ switch (cmd) {
 
   case 'set-openrouter-key':
     setOpenRouterKey(sub);
+    break;
+
+  case 'set-nvidia-key':
+    setNvidiaKey(sub);
     break;
 
   case 'set-openrouter-models':
