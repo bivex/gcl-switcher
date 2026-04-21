@@ -19,6 +19,8 @@
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
+const http = require('http');
+const https = require('https');
 
 const SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');
 const CONFIG_PATH   = path.join(os.homedir(), '.gcl-switcher.json');
@@ -68,7 +70,17 @@ const KIMI_ENV = {
   ANTHROPIC_DEFAULT_OPUS_MODEL:   'moonshotai/kimi-k2.5',
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'moonshotai/kimi-k2.5',
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'moonshotai/kimi-k2.5',
-  ANTHROPIC_CHAT_TEMPLATE_KWARGS: '{"thinking":true}',
+  ANTHROPIC_MODEL:                 'moonshotai/kimi-k2.5',
+  API_TIMEOUT_MS:                  '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const KIMI_BRIDGE_ENV = {
+  ANTHROPIC_BASE_URL:              'http://127.0.0.1:8080/v1',
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'moonshotai/kimi-k2.5',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'moonshotai/kimi-k2.5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'moonshotai/kimi-k2.5',
+  ANTHROPIC_MODEL:                 'moonshotai/kimi-k2.5',
   API_TIMEOUT_MS:                  '300000',
   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
 };
@@ -159,7 +171,7 @@ const GLM5_TURBO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_TURBO_ENV),
 const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
 const DFLASH_KEYS    = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
-const KIMI_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(KIMI_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const KIMI_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(KIMI_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -179,7 +191,10 @@ function currentMode(settings) {
   if (url.includes('z.ai') && opus === 'glm-5-turbo') return 'glm5turbo';
   if (url.includes('z.ai') && opus === 'glm-5') return 'glm5';
   if (url.includes('z.ai')) return 'glm';
-  if (url.includes('nvidia.com')) return 'kimi';
+  if (url.includes('nvidia.com') || (opus && opus.includes('kimi'))) {
+    if (url.includes('127.0.0.1:8080') || url.includes('localhost:8080')) return 'kimi-bridge';
+    return 'kimi';
+  }
   if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) return 'dflash';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
   if (url.includes('openrouter.ai')) {
@@ -239,7 +254,12 @@ function status() {
   } else if (mode === 'kimi') {
     console.log('Active mode: Kimi (NVIDIA)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
-    console.log('  Model    : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL || 'moonshotai/kimi-k2.5'));
+    console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'moonshotai/kimi-k2.5'));
+  } else if (mode === 'kimi-bridge') {
+    console.log('Active mode: Kimi (NVIDIA Bridge)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'moonshotai/kimi-k2.5'));
+    console.log('  Note     : ensure "gcl-switcher bridge" is running');
   } else if (mode.startsWith('openrouter')) {
     const tierNames = {
       'openrouter': 'Claude',
@@ -268,10 +288,12 @@ function status() {
   if (config.glmApiKey) {
     const k = config.glmApiKey;
     console.log('  GLM key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
-  } else if (config.nvidiaApiKey) {
+  }
+  if (config.nvidiaApiKey) {
     const k = config.nvidiaApiKey;
     console.log('  NVIDIA key: ' + k.slice(0, 8) + '...' + k.slice(-4));
-  } else if (mode === 'glm' || mode === 'glm5' || mode === 'glm51' || mode === 'glm5turbo') {
+  }
+  if (mode === 'glm' || mode === 'glm5' || mode === 'glm51' || mode === 'glm5turbo') {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
   }
 }
@@ -460,8 +482,50 @@ function useKimi() {
   settings.env.ANTHROPIC_API_KEY = key;
   Object.assign(settings.env, KIMI_ENV);
 
+  if (config.kimiBaseUrl) {
+    settings.env.ANTHROPIC_BASE_URL = config.kimiBaseUrl;
+  }
+  if (config.kimiModel) {
+    settings.env.ANTHROPIC_MODEL = config.kimiModel;
+    settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.kimiModel;
+    settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL = config.kimiModel;
+    settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = config.kimiModel;
+  }
+
   writeJson(SETTINGS_PATH, settings);
   console.log('Switched to Kimi (NVIDIA). Restart Claude Code to apply.');
+  if (config.kimiBaseUrl) console.log('Using custom URL: ' + config.kimiBaseUrl);
+  if (config.kimiModel)   console.log('Using custom model: ' + config.kimiModel);
+}
+
+function useKimiBridge() {
+  const config = readJson(CONFIG_PATH);
+  const key    = config.nvidiaApiKey;
+
+  if (!key) {
+    console.error('No NVIDIA API key saved. Run first:\n  gcl-switcher set-nvidia-key <your_nvidia_api_key>');
+    process.exit(1);
+  }
+
+  const settings = readJson(SETTINGS_PATH);
+  settings.env   = settings.env ?? {};
+
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of KIMI_KEYS) delete settings.env[k];
+
+  settings.env.ANTHROPIC_AUTH_TOKEN = key;
+  settings.env.ANTHROPIC_API_KEY = key;
+  Object.assign(settings.env, KIMI_BRIDGE_ENV);
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to Kimi (NVIDIA Bridge). Restart Claude Code to apply.');
+  console.log('Next: keep "gcl-switcher bridge" running in a separate terminal.');
 }
 
 function useClaude() {
@@ -586,6 +650,161 @@ function setNvidiaKey(key) {
   console.log('NVIDIA API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
 }
 
+function setKimiModel(model) {
+  if (!model) {
+    console.error('Usage: gcl-switcher set-kimi-model <model_id>');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.kimiModel = model;
+  writeJson(CONFIG_PATH, config);
+  console.log('Kimi model override set to: ' + model);
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'kimi') useKimi();
+}
+
+function setKimiUrl(url) {
+  if (!url) {
+    console.error('Usage: gcl-switcher set-kimi-url <url>');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.kimiBaseUrl = url;
+  writeJson(CONFIG_PATH, config);
+  console.log('Kimi Base URL set to: ' + url);
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'kimi') useKimi();
+}
+
+function resetKimi() {
+  const config = readJson(CONFIG_PATH);
+  delete config.kimiBaseUrl;
+  delete config.kimiModel;
+  writeJson(CONFIG_PATH, config);
+  console.log('Kimi overrides cleared. Using defaults.');
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'kimi') useKimi();
+}
+
+function startBridge() {
+  const config = readJson(CONFIG_PATH);
+  const key = config.nvidiaApiKey;
+  if (!key) { console.error('No NVIDIA key saved.'); process.exit(1); }
+
+  console.log('Starting NVIDIA Kimi Bridge...');
+  console.log('Listening on http://127.0.0.1:8080');
+  console.log('Target: https://integrate.api.nvidia.com/v1/chat/completions');
+
+  const server = http.createServer((req, res) => {
+    if (req.url !== '/v1/messages') {
+      res.writeHead(404);
+      return res.end();
+    }
+
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const anthropic = JSON.parse(body);
+        const openai = {
+          model: 'moonshotai/kimi-k2.5',
+          messages: anthropic.messages.map(m => ({
+            role: m.role,
+            content: Array.isArray(m.content) ? m.content.map(c => c.text).join('\n') : m.content
+          })),
+          stream: anthropic.stream,
+          max_tokens: anthropic.max_tokens,
+          temperature: anthropic.temperature,
+          chat_template_kwargs: { thinking: true }
+        };
+
+        const options = {
+          hostname: 'integrate.api.nvidia.com',
+          path: '/v1/chat/completions',
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json'
+          }
+        };
+
+        const nvidiaReq = https.request(options, (nvidiaRes) => {
+          if (anthropic.stream) {
+            res.writeHead(200, { 
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-cache',
+              'Connection': 'keep-alive'
+            });
+            
+            nvidiaRes.on('data', (chunk) => {
+              const str = chunk.toString();
+              const lines = str.split('\n');
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const dataStr = line.slice(6);
+                  if (dataStr === '[DONE]') {
+                    res.write('event: message_stop\ndata: {"type": "message_stop"}\n\n');
+                    continue;
+                  }
+                  try {
+                    const data = JSON.parse(dataStr);
+                    const content = data.choices[0].delta.content;
+                    if (content) {
+                      const payload = {
+                        type: 'content_block_delta',
+                        index: 0,
+                        delta: { type: 'text_delta', text: content }
+                      };
+                      res.write(`event: content_block_delta\ndata: ${JSON.stringify(payload)}\n\n`);
+                    }
+                  } catch (e) {}
+                }
+              }
+            });
+            nvidiaRes.on('end', () => res.end());
+          } else {
+            let resBody = '';
+            nvidiaRes.on('data', chunk => resBody += chunk);
+            nvidiaRes.on('end', () => {
+              try {
+                const openResponse = JSON.parse(resBody);
+                const anthropicResponse = {
+                  id: openResponse.id,
+                  type: 'message',
+                  role: 'assistant',
+                  model: openResponse.model,
+                  content: [{ type: 'text', text: openResponse.choices[0].message.content }],
+                  usage: { 
+                    input_tokens: openResponse.usage.prompt_tokens, 
+                    output_tokens: openResponse.usage.completion_tokens 
+                  }
+                };
+                res.end(JSON.stringify(anthropicResponse));
+              } catch (e) {
+                res.statusCode = 500;
+                res.end(JSON.stringify({ error: 'Failed to parse NVIDIA response' }));
+              }
+            });
+          }
+        });
+        
+        nvidiaReq.on('error', (e) => {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: e.message }));
+        });
+
+        nvidiaReq.write(JSON.stringify(openai));
+        nvidiaReq.end();
+      } catch (e) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: 'Invalid Anthropic request' }));
+      }
+    });
+  });
+
+  server.listen(8080, '127.0.0.1');
+}
+
 function setOpenRouterModels(tier, model) {
   if (!tier || !model) {
     console.error('Usage: gcl-switcher set-openrouter-models <opus|sonnet|haiku> <model_id>');
@@ -671,7 +890,9 @@ function help() {
     '  gcl-switcher use elephant                Switch to Elephant Alpha (shortcut)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local:1234)',
     '  gcl-switcher use dflash                  Switch to DFlash (local:8000 mlx)',
-    '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA)',
+    '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA direct)',
+    '  gcl-switcher use kimi-bridge             Switch to Kimi (NVIDIA Bridge)',
+    '  gcl-switcher bridge                      Start local Kimi bridge server',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
     '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
@@ -679,6 +900,9 @@ function help() {
     '  gcl-switcher set-openrouter-models <tier> <model>  Set custom model',
     '  gcl-switcher set-dflash-model <model_id> Set custom DFlash model',
     '  gcl-switcher set-dflash-url <url>        Set custom DFlash URL',
+    '  gcl-switcher set-kimi-model <model_id>   Set custom Kimi model',
+    '  gcl-switcher set-kimi-url <url>          Set custom Kimi URL',
+    '  gcl-switcher reset-kimi                  Reset Kimi to defaults',
     '  gcl-switcher help                        Show this help',
     '',
     'Quickstart (GLM):',
@@ -756,6 +980,7 @@ switch (cmd) {
     else if (sub === 'lmstudio')   useLmStudio();
     else if (sub === 'dflash')     useDflash();
     else if (sub === 'kimi')       useKimi();
+    else if (sub === 'kimi-bridge') useKimiBridge();
     else if (sub === 'claude')     useClaude();
     else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|lmstudio|dflash|claude>'); process.exit(1); }
     break;
@@ -764,12 +989,28 @@ switch (cmd) {
     setKey(sub);
     break;
 
+  case 'bridge':
+    startBridge();
+    break;
+
   case 'set-openrouter-key':
     setOpenRouterKey(sub);
     break;
 
   case 'set-nvidia-key':
     setNvidiaKey(sub);
+    break;
+
+  case 'set-kimi-model':
+    setKimiModel(sub);
+    break;
+
+  case 'set-kimi-url':
+    setKimiUrl(sub);
+    break;
+
+  case 'reset-kimi':
+    resetKimi();
     break;
 
   case 'set-openrouter-models':
