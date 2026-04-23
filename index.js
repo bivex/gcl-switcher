@@ -159,6 +159,11 @@ const OPENROUTER_ELEPHANT_MODELS = {
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'openrouter/elephant-alpha',
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'openrouter/elephant-alpha',
 };
+const OPENROUTER_LING_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'inclusionai/ling-2.6-flash:free',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'inclusionai/ling-2.6-flash:free',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'inclusionai/ling-2.6-flash:free',
+};
 const OPENROUTER_ENV = {
   ANTHROPIC_BASE_URL: OPENROUTER_BASE_URL,
   ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
@@ -207,6 +212,7 @@ function currentMode(settings) {
     if (opus.includes('minimax')) return 'openrouter-minimax';
     if (opus.includes('arcee')) return 'openrouter-arcee';
     if (opus.includes('elephant')) return 'openrouter-elephant';
+    if (opus.includes('ling')) return 'openrouter-ling';
     return 'openrouter';
   }
   return 'claude';
@@ -272,6 +278,7 @@ function status() {
       'openrouter-minimax': 'Minimax',
       'openrouter-arcee': 'Arcee',
       'openrouter-elephant': 'Elephant Alpha',
+      'openrouter-ling': 'Ling',
     };
     console.log('Active mode: OpenRouter (' + (tierNames[mode] || 'Claude') + ')');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
@@ -568,6 +575,10 @@ function useElephant() {
   useOpenRouter('elephant');
 }
 
+function useLing() {
+  useOpenRouter('ling');
+}
+
 function useOpenRouter(tier = 'default') {
   const config = readJson(CONFIG_PATH);
   const key    = config.openrouterApiKey;
@@ -602,6 +613,7 @@ function useOpenRouter(tier = 'default') {
     'minimax': OPENROUTER_MINIMAX_MODELS,
     'arcee': OPENROUTER_ARCEE_MODELS,
     'elephant': OPENROUTER_ELEPHANT_MODELS,
+    'ling': OPENROUTER_LING_MODELS,
   };
 
   if (tierModels[tier]) {
@@ -888,6 +900,7 @@ function help() {
     '  gcl-switcher use minimax                 Switch to Minimax (shortcut)',
     '  gcl-switcher use arcee                   Switch to Arcee (shortcut)',
     '  gcl-switcher use elephant                Switch to Elephant Alpha (shortcut)',
+    '  gcl-switcher use ling                    Switch to Ling 2.6 Flash (shortcut)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local:1234)',
     '  gcl-switcher use dflash                  Switch to DFlash (local:8000 mlx)',
     '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA direct)',
@@ -922,6 +935,7 @@ function help() {
     '  gcl-switcher use minimax                  # Minimax (shortcut)',
     '  gcl-switcher use arcee                    # Arcee (shortcut)',
     '  gcl-switcher use elephant                 # Elephant Alpha (shortcut)',
+    '  gcl-switcher use ling                     # Ling 2.6 Flash (shortcut)',
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
@@ -943,6 +957,7 @@ function help() {
     '  minimax  - Minimax M2.5',
     '  arcee    - Arcee Trinity',
     '  elephant - Elephant Alpha (free)',
+    '  ling     - InclusionAI Ling 2.6 Flash (free)',
     '',
     'OpenRouter Features:',
     '  - Provider failover for high availability',
@@ -977,12 +992,13 @@ switch (cmd) {
     else if (sub === 'minimax')    useMinimax();
     else if (sub === 'arcee')      useArcee();
     else if (sub === 'elephant')   useElephant();
+    else if (sub === 'ling')       useLing();
     else if (sub === 'lmstudio')   useLmStudio();
     else if (sub === 'dflash')     useDflash();
     else if (sub === 'kimi')       useKimi();
     else if (sub === 'kimi-bridge') useKimiBridge();
     else if (sub === 'claude')     useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|lmstudio|dflash|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|lmstudio|dflash|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
