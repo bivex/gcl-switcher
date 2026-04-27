@@ -200,7 +200,8 @@ function currentMode(settings) {
   if (url.includes('z.ai') && opus === 'glm-5.1') return 'glm51';
   if (url.includes('z.ai') && opus === 'glm-5-turbo') return 'glm5turbo';
   if (url.includes('z.ai') && opus === 'glm-5') return 'glm5';
-  if (url.includes('z.ai')) return 'glm';
+  if (url.includes('z.ai') && (opus === 'glm-4.7' || opus.includes('glm-4'))) return 'glm47';
+  if (url.includes('z.ai')) return 'glm47';
   if (url.includes('nvidia.com') || (opus && opus.includes('kimi'))) {
     if (url.includes('127.0.0.1:8080') || url.includes('localhost:8080')) return 'kimi-bridge';
     return 'kimi';
@@ -249,8 +250,8 @@ function status() {
     console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-5'));
     console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'glm-5'));
     console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || 'glm-5'));
-  } else if (mode === 'glm') {
-    console.log('Active mode: GLM (z.ai)');
+  } else if (mode === 'glm47' || mode === 'glm') {
+    console.log('Active mode: GLM-4.7 (z.ai)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'glm-4.7'));
     console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'glm-4.7'));
@@ -307,7 +308,7 @@ function status() {
     const k = config.nvidiaApiKey;
     console.log('  NVIDIA key: ' + k.slice(0, 8) + '...' + k.slice(-4));
   }
-  if (mode === 'glm' || mode === 'glm5' || mode === 'glm51' || mode === 'glm5turbo') {
+  if (mode === 'glm47' || mode === 'glm' || mode === 'glm5' || mode === 'glm51' || mode === 'glm5turbo') {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
   }
 }
@@ -902,7 +903,8 @@ function help() {
     '',
     'Usage:',
     '  gcl-switcher status                      Show active mode and settings',
-    '  gcl-switcher use glm                     Switch to GLM (z.ai)',
+    '  gcl-switcher use glm                     Switch to GLM-4.7 (z.ai)',
+    '  gcl-switcher use glm47                   Switch to GLM-4.7 (alias)',
     '  gcl-switcher use glm51                   Switch to GLM-5.1 (latest for all GLM plans)',
     '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
     '  gcl-switcher use glm5turbo               Switch to GLM-5-Turbo (fast high-end)',
@@ -997,7 +999,7 @@ switch (cmd) {
     break;
 
   case 'use':
-    if (sub === 'glm')             useGlm();
+    if (sub === 'glm' || sub === 'glm47') useGlm();
     else if (sub === 'glm51')      useGlm51();
     else if (sub === 'glm5')       useGlm5();
     else if (sub === 'glm5turbo')  useGlm5Turbo();
@@ -1014,7 +1016,7 @@ switch (cmd) {
     else if (sub === 'kimi')       useKimi();
     else if (sub === 'kimi-bridge') useKimiBridge();
     else if (sub === 'claude')     useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|tencent|lmstudio|dflash|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm47|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|tencent|lmstudio|dflash|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
