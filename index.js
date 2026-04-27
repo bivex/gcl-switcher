@@ -164,6 +164,11 @@ const OPENROUTER_LING_MODELS = {
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'inclusionai/ling-2.6-flash:free',
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'inclusionai/ling-2.6-flash:free',
 };
+const OPENROUTER_TENCENT_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'tencent/hy3-preview:free',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'tencent/hy3-preview:free',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'tencent/hy3-preview:free',
+};
 const OPENROUTER_ENV = {
   ANTHROPIC_BASE_URL: OPENROUTER_BASE_URL,
   ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
@@ -213,6 +218,7 @@ function currentMode(settings) {
     if (opus.includes('arcee')) return 'openrouter-arcee';
     if (opus.includes('elephant')) return 'openrouter-elephant';
     if (opus.includes('ling')) return 'openrouter-ling';
+    if (opus.includes('tencent') || opus.includes('hy3')) return 'openrouter-tencent';
     return 'openrouter';
   }
   return 'claude';
@@ -279,6 +285,7 @@ function status() {
       'openrouter-arcee': 'Arcee',
       'openrouter-elephant': 'Elephant Alpha',
       'openrouter-ling': 'Ling',
+      'openrouter-tencent': 'Tencent HY3',
     };
     console.log('Active mode: OpenRouter (' + (tierNames[mode] || 'Claude') + ')');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
@@ -579,6 +586,10 @@ function useLing() {
   useOpenRouter('ling');
 }
 
+function useTencent() {
+  useOpenRouter('tencent');
+}
+
 function useOpenRouter(tier = 'default') {
   const config = readJson(CONFIG_PATH);
   const key    = config.openrouterApiKey;
@@ -614,6 +625,7 @@ function useOpenRouter(tier = 'default') {
     'arcee': OPENROUTER_ARCEE_MODELS,
     'elephant': OPENROUTER_ELEPHANT_MODELS,
     'ling': OPENROUTER_LING_MODELS,
+    'tencent': OPENROUTER_TENCENT_MODELS,
   };
 
   if (tierModels[tier]) {
@@ -894,13 +906,14 @@ function help() {
     '  gcl-switcher use glm51                   Switch to GLM-5.1 (latest for all GLM plans)',
     '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
     '  gcl-switcher use glm5turbo               Switch to GLM-5-Turbo (fast high-end)',
-    '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter|nemotron|elephant)',
+    '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter|nemotron|elephant|tencent)',
     '  gcl-switcher use stepfun                 Switch to StepFun (shortcut)',
     '  gcl-switcher use nemotron                Switch to Nemotron (shortcut)',
     '  gcl-switcher use minimax                 Switch to Minimax (shortcut)',
     '  gcl-switcher use arcee                   Switch to Arcee (shortcut)',
     '  gcl-switcher use elephant                Switch to Elephant Alpha (shortcut)',
     '  gcl-switcher use ling                    Switch to Ling 2.6 Flash (shortcut)',
+'  gcl-switcher use tencent                 Switch to Tencent HY3 Preview (shortcut)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local:1234)',
     '  gcl-switcher use dflash                  Switch to DFlash (local:8000 mlx)',
     '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA direct)',
@@ -936,6 +949,7 @@ function help() {
     '  gcl-switcher use arcee                    # Arcee (shortcut)',
     '  gcl-switcher use elephant                 # Elephant Alpha (shortcut)',
     '  gcl-switcher use ling                     # Ling 2.6 Flash (shortcut)',
+'  gcl-switcher use tencent                  # Tencent HY3 Preview (shortcut)',
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
@@ -958,6 +972,7 @@ function help() {
     '  arcee    - Arcee Trinity',
     '  elephant - Elephant Alpha (free)',
     '  ling     - InclusionAI Ling 2.6 Flash (free)',
+'  tencent  - Tencent HY3 Preview (free)',
     '',
     'OpenRouter Features:',
     '  - Provider failover for high availability',
@@ -993,12 +1008,13 @@ switch (cmd) {
     else if (sub === 'arcee')      useArcee();
     else if (sub === 'elephant')   useElephant();
     else if (sub === 'ling')       useLing();
+    else if (sub === 'tencent')    useTencent();
     else if (sub === 'lmstudio')   useLmStudio();
     else if (sub === 'dflash')     useDflash();
     else if (sub === 'kimi')       useKimi();
     else if (sub === 'kimi-bridge') useKimiBridge();
     else if (sub === 'claude')     useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|lmstudio|dflash|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|tencent|lmstudio|dflash|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
