@@ -180,7 +180,7 @@ const MIMO_ENV = {
   ANTHROPIC_BASE_URL:              MIMO_BASE_URL,
   ANTHROPIC_DEFAULT_OPUS_MODEL:   'mimo-v2.5-pro',
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2.5',
-  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'mimo-v2.5-tts',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'mimo-v2.5-flash',
   ANTHROPIC_MODEL:                 'mimo-v2.5-pro',
   API_TIMEOUT_MS:                  '300000',
   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
@@ -290,7 +290,9 @@ function status() {
   } else if (mode === 'mimo') {
     console.log('Active mode: MiMo (xiaomimimo.com)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
-    console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'mimo-v2.5-pro'));
+    console.log('  Opus     : ' + (settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL   || 'mimo-v2.5-pro'));
+    console.log('  Sonnet   : ' + (settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL || 'mimo-v2.5'));
+    console.log('  Haiku    : ' + (settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL  || 'mimo-v2.5-flash'));
   } else if (mode.startsWith('openrouter')) {
     const tierNames = {
       'openrouter': 'Claude',
@@ -664,7 +666,7 @@ function useOpenRouter(tier = 'default') {
   console.log('Switched to OpenRouter' + tierName + '. Restart Claude Code to apply.');
 }
 
-function useMimo() {
+function useMimo(tier = 'v2.5') {
   const config = readJson(CONFIG_PATH);
   const key    = config.mimoApiKey;
 
@@ -687,20 +689,47 @@ function useMimo() {
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   settings.env.ANTHROPIC_API_KEY = key;
+  
+  const tiers = {
+    'v2.5': {
+      ANTHROPIC_DEFAULT_OPUS_MODEL:   'mimo-v2.5-pro',
+      ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2.5',
+      ANTHROPIC_DEFAULT_HAIKU_MODEL:  'mimo-v2.5-flash',
+      ANTHROPIC_MODEL:                 'mimo-v2.5-pro',
+    },
+    'v2': {
+      ANTHROPIC_DEFAULT_OPUS_MODEL:   'mimo-v2-pro',
+      ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2-omni',
+      ANTHROPIC_DEFAULT_HAIKU_MODEL:  'mimo-v2-tts',
+      ANTHROPIC_MODEL:                 'mimo-v2-pro',
+    },
+    'flash': {
+      ANTHROPIC_DEFAULT_OPUS_MODEL:   'mimo-v2.5-flash',
+      ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2.5-flash',
+      ANTHROPIC_DEFAULT_HAIKU_MODEL:  'mimo-v2.5-flash',
+      ANTHROPIC_MODEL:                 'mimo-v2.5-flash',
+    }
+  };
+
   Object.assign(settings.env, MIMO_ENV);
+  if (tiers[tier]) {
+    Object.assign(settings.env, tiers[tier]);
+  }
 
   if (config.mimoBaseUrl) {
     settings.env.ANTHROPIC_BASE_URL = config.mimoBaseUrl;
   }
+
+  // Apply custom model if saved (overrides tier)
   if (config.mimoModel) {
     settings.env.ANTHROPIC_MODEL = config.mimoModel;
     settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.mimoModel;
     settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL = config.mimoModel;
     settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = config.mimoModel;
   }
-
+  
   writeJson(SETTINGS_PATH, settings);
-  console.log('Switched to MiMo. Restart Claude Code to apply.');
+  console.log('Switched to MiMo (' + (tiers[tier] ? tier : 'custom') + '). Restart Claude Code to apply.');
   if (config.mimoBaseUrl) console.log('Using custom URL: ' + config.mimoBaseUrl);
   if (config.mimoModel)   console.log('Using custom model: ' + config.mimoModel);
 }
@@ -1030,7 +1059,7 @@ function help() {
     '  gcl-switcher use dflash                  Switch to DFlash (local:8000 mlx)',
     '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA direct)',
     '  gcl-switcher use kimi-bridge             Switch to Kimi (NVIDIA Bridge)',
-    '  gcl-switcher use mimo                    Switch to MiMo (xiaomimimo.com)',
+    '  gcl-switcher use mimo [v2.5|v2|flash]    Switch to MiMo (xiaomimimo.com)',
     '  gcl-switcher bridge                      Start local Kimi bridge server',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
@@ -1130,7 +1159,7 @@ switch (cmd) {
     else if (sub === 'dflash')     useDflash();
     else if (sub === 'kimi')       useKimi();
     else if (sub === 'kimi-bridge') useKimiBridge();
-    else if (sub === 'mimo')       useMimo();
+    else if (sub === 'mimo')       useMimo(arg3);
     else if (sub === 'claude')     useClaude();
     else { console.error('Usage: gcl-switcher use <glm|glm47|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|tencent|lmstudio|dflash|kimi|mimo|claude>'); process.exit(1); }
     break;
