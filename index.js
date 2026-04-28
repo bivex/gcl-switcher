@@ -178,10 +178,10 @@ const OPENROUTER_ENV = {
 const MIMO_BASE_URL = 'https://token-plan-sgp.xiaomimimo.com/anthropic';
 const MIMO_ENV = {
   ANTHROPIC_BASE_URL:              MIMO_BASE_URL,
-  ANTHROPIC_DEFAULT_OPUS_MODEL:   'MiMo-V2.5-Pro',
-  ANTHROPIC_DEFAULT_SONNET_MODEL: 'MiMo-V2.5',
-  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'MiMo-V2.5-TTS',
-  ANTHROPIC_MODEL:                 'MiMo-V2.5-Pro',
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'mimo-v2.5-pro',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2.5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'mimo-v2.5-tts',
+  ANTHROPIC_MODEL:                 'mimo-v2.5-pro',
   API_TIMEOUT_MS:                  '300000',
   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
 };
@@ -290,7 +290,7 @@ function status() {
   } else if (mode === 'mimo') {
     console.log('Active mode: MiMo (xiaomimimo.com)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
-    console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'MiMo-V2.5-Pro'));
+    console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'mimo-v2.5-pro'));
   } else if (mode.startsWith('openrouter')) {
     const tierNames = {
       'openrouter': 'Claude',
