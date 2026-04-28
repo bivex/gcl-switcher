@@ -174,6 +174,18 @@ const OPENROUTER_ENV = {
   ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
 };
 
+// MiMo defaults
+const MIMO_BASE_URL = 'https://token-plan-sgp.xiaomimimo.com/anthropic';
+const MIMO_ENV = {
+  ANTHROPIC_BASE_URL:              MIMO_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'MiMo-V2.5-Pro',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'MiMo-V2.5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'MiMo-V2.5-TTS',
+  ANTHROPIC_MODEL:                 'MiMo-V2.5-Pro',
+  API_TIMEOUT_MS:                  '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
 const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV), 'ANTHROPIC_BASE_URL'];
 const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const GLM51_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM51_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
@@ -182,6 +194,7 @@ const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC
 const DFLASH_KEYS    = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
 const KIMI_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(KIMI_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const MIMO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(MIMO_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -207,6 +220,7 @@ function currentMode(settings) {
     return 'kimi';
   }
   if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) return 'dflash';
+  if (url.includes('xiaomimimo.com')) return 'mimo';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
   if (url.includes('openrouter.ai')) {
     if (opus.includes('gemma')) return 'openrouter-free';
@@ -273,6 +287,10 @@ function status() {
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'moonshotai/kimi-k2.5'));
     console.log('  Note     : ensure "gcl-switcher bridge" is running');
+  } else if (mode === 'mimo') {
+    console.log('Active mode: MiMo (xiaomimimo.com)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'MiMo-V2.5-Pro'));
   } else if (mode.startsWith('openrouter')) {
     const tierNames = {
       'openrouter': 'Claude',
@@ -307,6 +325,10 @@ function status() {
   if (config.nvidiaApiKey) {
     const k = config.nvidiaApiKey;
     console.log('  NVIDIA key: ' + k.slice(0, 8) + '...' + k.slice(-4));
+  }
+  if (config.mimoApiKey) {
+    const k = config.mimoApiKey;
+    console.log('  MiMo key  : ' + k.slice(0, 8) + '...' + k.slice(-4));
   }
   if (mode === 'glm47' || mode === 'glm' || mode === 'glm5' || mode === 'glm51' || mode === 'glm5turbo') {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
@@ -642,6 +664,47 @@ function useOpenRouter(tier = 'default') {
   console.log('Switched to OpenRouter' + tierName + '. Restart Claude Code to apply.');
 }
 
+function useMimo() {
+  const config = readJson(CONFIG_PATH);
+  const key    = config.mimoApiKey;
+
+  if (!key) {
+    console.error('No MiMo API key saved. Run first:\n  gcl-switcher set-mimo-key <your_mimo_api_key>');
+    process.exit(1);
+  }
+
+  const settings = readJson(SETTINGS_PATH);
+  settings.env   = settings.env ?? {};
+
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of KIMI_KEYS) delete settings.env[k];
+
+  settings.env.ANTHROPIC_AUTH_TOKEN = key;
+  settings.env.ANTHROPIC_API_KEY = key;
+  Object.assign(settings.env, MIMO_ENV);
+
+  if (config.mimoBaseUrl) {
+    settings.env.ANTHROPIC_BASE_URL = config.mimoBaseUrl;
+  }
+  if (config.mimoModel) {
+    settings.env.ANTHROPIC_MODEL = config.mimoModel;
+    settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.mimoModel;
+    settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL = config.mimoModel;
+    settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = config.mimoModel;
+  }
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to MiMo. Restart Claude Code to apply.');
+  if (config.mimoBaseUrl) console.log('Using custom URL: ' + config.mimoBaseUrl);
+  if (config.mimoModel)   console.log('Using custom model: ' + config.mimoModel);
+}
+
 function setKey(key) {
   if (!key) {
     console.error('Usage: gcl-switcher set-key <api_key>');
@@ -896,6 +959,53 @@ function setDflashUrl(url) {
   }
 }
 
+function setMimoKey(key) {
+  if (!key) {
+    console.error('Usage: gcl-switcher set-mimo-key <api_key>');
+    process.exit(1);
+  }
+  const config   = readJson(CONFIG_PATH);
+  config.mimoApiKey = key;
+  writeJson(CONFIG_PATH, config);
+  console.log('MiMo API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
+}
+
+function setMimoModel(model) {
+  if (!model) {
+    console.error('Usage: gcl-switcher set-mimo-model <model_id>');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.mimoModel = model;
+  writeJson(CONFIG_PATH, config);
+  console.log('MiMo model override set to: ' + model);
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'mimo') useMimo();
+}
+
+function setMimoUrl(url) {
+  if (!url) {
+    console.error('Usage: gcl-switcher set-mimo-url <url>');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.mimoBaseUrl = url;
+  writeJson(CONFIG_PATH, config);
+  console.log('MiMo Base URL set to: ' + url);
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'mimo') useMimo();
+}
+
+function resetMimo() {
+  const config = readJson(CONFIG_PATH);
+  delete config.mimoBaseUrl;
+  delete config.mimoModel;
+  writeJson(CONFIG_PATH, config);
+  console.log('MiMo overrides cleared. Using defaults.');
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'mimo') useMimo();
+}
+
 function help() {
   console.log([
     '',
@@ -920,17 +1030,22 @@ function help() {
     '  gcl-switcher use dflash                  Switch to DFlash (local:8000 mlx)',
     '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA direct)',
     '  gcl-switcher use kimi-bridge             Switch to Kimi (NVIDIA Bridge)',
+    '  gcl-switcher use mimo                    Switch to MiMo (xiaomimimo.com)',
     '  gcl-switcher bridge                      Start local Kimi bridge server',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
     '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
     '  gcl-switcher set-nvidia-key <key>        Save your NVIDIA API key',
+    '  gcl-switcher set-mimo-key <key>          Save your MiMo API key',
     '  gcl-switcher set-openrouter-models <tier> <model>  Set custom model',
     '  gcl-switcher set-dflash-model <model_id> Set custom DFlash model',
     '  gcl-switcher set-dflash-url <url>        Set custom DFlash URL',
     '  gcl-switcher set-kimi-model <model_id>   Set custom Kimi model',
     '  gcl-switcher set-kimi-url <url>          Set custom Kimi URL',
     '  gcl-switcher reset-kimi                  Reset Kimi to defaults',
+    '  gcl-switcher set-mimo-model <model_id>   Set custom MiMo model',
+    '  gcl-switcher set-mimo-url <url>          Set custom MiMo URL',
+    '  gcl-switcher reset-mimo                  Reset MiMo to defaults',
     '  gcl-switcher help                        Show this help',
     '',
     'Quickstart (GLM):',
@@ -1015,8 +1130,9 @@ switch (cmd) {
     else if (sub === 'dflash')     useDflash();
     else if (sub === 'kimi')       useKimi();
     else if (sub === 'kimi-bridge') useKimiBridge();
+    else if (sub === 'mimo')       useMimo();
     else if (sub === 'claude')     useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm47|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|tencent|lmstudio|dflash|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm47|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|tencent|lmstudio|dflash|kimi|mimo|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
@@ -1045,6 +1161,22 @@ switch (cmd) {
 
   case 'reset-kimi':
     resetKimi();
+    break;
+
+  case 'set-mimo-key':
+    setMimoKey(sub);
+    break;
+
+  case 'set-mimo-model':
+    setMimoModel(sub);
+    break;
+
+  case 'set-mimo-url':
+    setMimoUrl(sub);
+    break;
+
+  case 'reset-mimo':
+    resetMimo();
     break;
 
   case 'set-openrouter-models':
