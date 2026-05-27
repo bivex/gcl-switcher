@@ -179,6 +179,18 @@ const OPENROUTER_ENV = {
   ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
 };
 
+// Omniroute defaults
+const OMNIROUTE_BASE_URL = 'http://localhost:20128/v1';
+const OMNIROUTE_ENV = {
+  ANTHROPIC_BASE_URL:              OMNIROUTE_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'default',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'default',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'default',
+  ANTHROPIC_MODEL:                 'default',
+  API_TIMEOUT_MS:                  '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
 // MiMo defaults
 const MIMO_BASE_URL = 'https://token-plan-sgp.xiaomimimo.com/anthropic';
 const MIMO_ENV = {
@@ -200,6 +212,7 @@ const DFLASH_KEYS    = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC
 const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
 const KIMI_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(KIMI_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 const MIMO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(MIMO_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const OMNIROUTE_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(OMNIROUTE_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -225,6 +238,7 @@ function currentMode(settings) {
     return 'kimi';
   }
   if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) return 'dflash';
+  if (url.includes(':20128') || url.includes('omniroute')) return 'omniroute';
   if (url.includes('xiaomimimo.com')) return 'mimo';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
   if (url.includes('openrouter.ai')) {
@@ -293,6 +307,10 @@ function status() {
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
     console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'moonshotai/kimi-k2.5'));
     console.log('  Note     : ensure "gcl-switcher bridge" is running');
+  } else if (mode === 'omniroute') {
+    console.log('Active mode: Omniroute (local)');
+    console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
+    console.log('  Model    : ' + (settings.env.ANTHROPIC_MODEL || 'default'));
   } else if (mode === 'mimo') {
     console.log('Active mode: MiMo (xiaomimimo.com)');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
@@ -363,6 +381,7 @@ function useGlm() {
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, GLM_ENV);
@@ -389,6 +408,7 @@ function useGlm5() {
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, GLM5_ENV);
@@ -415,6 +435,7 @@ function useGlm51() {
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, GLM51_ENV);
@@ -441,6 +462,7 @@ function useGlm5Turbo() {
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, GLM5_TURBO_ENV);
@@ -460,6 +482,7 @@ function useLmStudio() {
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   Object.assign(settings.env, LM_STUDIO_ENV);
   // set a permissive token Claude Code recognizes for LM Studio bridges
@@ -480,9 +503,10 @@ function useDflash() {
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   Object.assign(settings.env, DFLASH_ENV);
-  
+
   if (config.dflashBaseUrl) {
     settings.env.ANTHROPIC_BASE_URL = config.dflashBaseUrl;
   }
@@ -523,6 +547,7 @@ function useKimi() {
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   settings.env.ANTHROPIC_API_KEY = key;
@@ -564,6 +589,7 @@ function useKimiBridge() {
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
   for (const k of KIMI_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   settings.env.ANTHROPIC_API_KEY = key;
@@ -589,6 +615,7 @@ function useClaude() {
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
   for (const k of KIMI_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   writeJson(SETTINGS_PATH, settings);
   console.log('Switched to Claude (native). Restart Claude Code to apply.');
@@ -645,6 +672,7 @@ function useOpenRouter(tier = 'default') {
   for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
   for (const k of LM_STUDIO_KEYS) delete settings.env[k];
   for (const k of DFLASH_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   Object.assign(settings.env, OPENROUTER_ENV);
@@ -698,10 +726,11 @@ function useMimo(tier = 'v2.5') {
   for (const k of DFLASH_KEYS) delete settings.env[k];
   for (const k of OPENROUTER_KEYS) delete settings.env[k];
   for (const k of KIMI_KEYS) delete settings.env[k];
+  for (const k of OMNIROUTE_KEYS) delete settings.env[k];
 
   settings.env.ANTHROPIC_AUTH_TOKEN = key;
   settings.env.ANTHROPIC_API_KEY = key;
-  
+
   const tiers = {
     'v2.5': {
       ANTHROPIC_DEFAULT_OPUS_MODEL:   'mimo-v2.5-pro',
@@ -744,6 +773,91 @@ function useMimo(tier = 'v2.5') {
   console.log('Switched to MiMo (' + (tiers[tier] ? tier : 'custom') + '). Restart Claude Code to apply.');
   if (config.mimoBaseUrl) console.log('Using custom URL: ' + config.mimoBaseUrl);
   if (config.mimoModel)   console.log('Using custom model: ' + config.mimoModel);
+}
+
+function useOmniroute() {
+  const config   = readJson(CONFIG_PATH);
+  const settings = readJson(SETTINGS_PATH);
+  settings.env   = settings.env ?? {};
+
+  for (const k of GLM_KEYS) delete settings.env[k];
+  for (const k of GLM5_KEYS) delete settings.env[k];
+  for (const k of GLM51_KEYS) delete settings.env[k];
+  for (const k of GLM5_TURBO_KEYS) delete settings.env[k];
+  for (const k of LM_STUDIO_KEYS) delete settings.env[k];
+  for (const k of DFLASH_KEYS) delete settings.env[k];
+  for (const k of OPENROUTER_KEYS) delete settings.env[k];
+  for (const k of KIMI_KEYS) delete settings.env[k];
+  for (const k of MIMO_KEYS) delete settings.env[k];
+
+  Object.assign(settings.env, OMNIROUTE_ENV);
+
+  if (config.omnirouteBaseUrl) {
+    settings.env.ANTHROPIC_BASE_URL = config.omnirouteBaseUrl;
+  }
+
+  if (config.omnirouteModel) {
+    settings.env.ANTHROPIC_MODEL = config.omnirouteModel;
+    settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.omnirouteModel;
+    settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL = config.omnirouteModel;
+    settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = config.omnirouteModel;
+  }
+
+  const key = config.omnirouteApiKey || 'sk-omniroute';
+  settings.env.ANTHROPIC_AUTH_TOKEN = key;
+  settings.env.ANTHROPIC_API_KEY = key;
+
+  writeJson(SETTINGS_PATH, settings);
+  console.log('Switched to Omniroute (local). Restart Claude Code to apply.');
+  if (config.omnirouteBaseUrl) console.log('Using custom URL: ' + config.omnirouteBaseUrl);
+  if (config.omnirouteModel)   console.log('Using custom model: ' + config.omnirouteModel);
+}
+
+function setOmnirouteKey(key) {
+  if (!key) {
+    console.error('Usage: gcl-switcher set-omniroute-key <api_key>');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.omnirouteApiKey = key;
+  writeJson(CONFIG_PATH, config);
+  console.log('Omniroute API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
+}
+
+function setOmnirouteModel(model) {
+  if (!model) {
+    console.error('Usage: gcl-switcher set-omniroute-model <model_id>');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.omnirouteModel = model;
+  writeJson(CONFIG_PATH, config);
+  console.log('Omniroute model override set to: ' + model);
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'omniroute') useOmniroute();
+}
+
+function setOmnirouteUrl(url) {
+  if (!url) {
+    console.error('Usage: gcl-switcher set-omniroute-url <url>');
+    process.exit(1);
+  }
+  const config = readJson(CONFIG_PATH);
+  config.omnirouteBaseUrl = url;
+  writeJson(CONFIG_PATH, config);
+  console.log('Omniroute Base URL set to: ' + url);
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'omniroute') useOmniroute();
+}
+
+function resetOmniroute() {
+  const config = readJson(CONFIG_PATH);
+  delete config.omnirouteBaseUrl;
+  delete config.omnirouteModel;
+  writeJson(CONFIG_PATH, config);
+  console.log('Omniroute overrides cleared. Using defaults.');
+  const settings = readJson(SETTINGS_PATH);
+  if (currentMode(settings) === 'omniroute') useOmniroute();
 }
 
 function setKey(key) {
@@ -1073,12 +1187,14 @@ function help() {
     '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA direct)',
     '  gcl-switcher use kimi-bridge             Switch to Kimi (NVIDIA Bridge)',
     '  gcl-switcher use mimo [v2.5|v2|flash]    Switch to MiMo (xiaomimimo.com)',
+    '  gcl-switcher use omniroute               Switch to Omniroute (local:20128)',
     '  gcl-switcher bridge                      Start local Kimi bridge server',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
     '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
     '  gcl-switcher set-nvidia-key <key>        Save your NVIDIA API key',
     '  gcl-switcher set-mimo-key <key>          Save your MiMo API key',
+    '  gcl-switcher set-omniroute-key <key>     Save your Omniroute API key',
     '  gcl-switcher set-openrouter-models <tier> <model>  Set custom model',
     '  gcl-switcher set-dflash-model <model_id> Set custom DFlash model',
     '  gcl-switcher set-dflash-url <url>        Set custom DFlash URL',
@@ -1088,6 +1204,9 @@ function help() {
     '  gcl-switcher set-mimo-model <model_id>   Set custom MiMo model',
     '  gcl-switcher set-mimo-url <url>          Set custom MiMo URL',
     '  gcl-switcher reset-mimo                  Reset MiMo to defaults',
+    '  gcl-switcher set-omniroute-model <model> Set custom Omniroute model',
+    '  gcl-switcher set-omniroute-url <url>     Set custom Omniroute URL',
+    '  gcl-switcher reset-omniroute             Reset Omniroute to defaults',
     '  gcl-switcher help                        Show this help',
     '',
     'Quickstart (GLM):',
@@ -1113,6 +1232,10 @@ function help() {
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
+    '',
+    'Quickstart (Omniroute):',
+    '  gcl-switcher set-omniroute-key sk-xxx     # save key once',
+    '  gcl-switcher use omniroute                # activate Omniroute',
     '',
     'GLM Coding Features:',
     '  - GLM-5.1 available on all GLM Coding plans',
@@ -1176,8 +1299,9 @@ switch (cmd) {
     else if (sub === 'kimi')       useKimi();
     else if (sub === 'kimi-bridge') useKimiBridge();
     else if (sub === 'mimo')       useMimo(arg3);
+    else if (sub === 'omniroute')  useOmniroute();
     else if (sub === 'claude')     useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm47|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|lmstudio|dflash|kimi|mimo|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm47|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|lmstudio|dflash|kimi|mimo|omniroute|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
@@ -1222,6 +1346,22 @@ switch (cmd) {
 
   case 'reset-mimo':
     resetMimo();
+    break;
+
+  case 'set-omniroute-key':
+    setOmnirouteKey(sub);
+    break;
+
+  case 'set-omniroute-model':
+    setOmnirouteModel(sub);
+    break;
+
+  case 'set-omniroute-url':
+    setOmnirouteUrl(sub);
+    break;
+
+  case 'reset-omniroute':
+    resetOmniroute();
     break;
 
   case 'set-openrouter-models':
