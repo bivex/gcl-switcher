@@ -58,6 +58,7 @@ gcl-switcher status
 | `gcl-switcher use lmstudio` | Switch to LM Studio (local) |
 | `gcl-switcher use claude` | Switch to native Claude |
 | `gcl-switcher set-key <api_key>` | Save your z.ai API key |
+| `gcl-switcher get-key` | Print your saved z.ai API key |
 | `gcl-switcher set-openrouter-key <key>` | Save your OpenRouter API key |
 | `gcl-switcher set-openrouter-models <tier> <model>` | Set custom OpenRouter model |
 | `gcl-switcher help` | Show help |

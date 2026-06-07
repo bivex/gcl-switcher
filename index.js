@@ -871,6 +871,16 @@ function setKey(key) {
   console.log('GLM API key saved: ' + key.slice(0, 8) + '...' + key.slice(-4));
 }
 
+function getKey() {
+  const config = readJson(CONFIG_PATH);
+  const key = config.glmApiKey;
+  if (!key) {
+    console.error('No GLM API key saved.');
+    process.exit(1);
+  }
+  console.log(key);
+}
+
 function setOpenRouterKey(key) {
   if (!key) {
     console.error('Usage: gcl-switcher set-openrouter-key <api_key>');
@@ -1191,6 +1201,7 @@ function help() {
     '  gcl-switcher bridge                      Start local Kimi bridge server',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
+    '  gcl-switcher get-key                     Print your saved z.ai API key',
     '  gcl-switcher set-openrouter-key <key>    Save your OpenRouter API key',
     '  gcl-switcher set-nvidia-key <key>        Save your NVIDIA API key',
     '  gcl-switcher set-mimo-key <key>          Save your MiMo API key',
@@ -1306,6 +1317,10 @@ switch (cmd) {
 
   case 'set-key':
     setKey(sub);
+    break;
+
+  case 'get-key':
+    getKey();
     break;
 
   case 'bridge':
