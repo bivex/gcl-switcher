@@ -174,6 +174,11 @@ const OPENROUTER_TENCENT_MODELS = {
   ANTHROPIC_DEFAULT_SONNET_MODEL: 'tencent/hy3-preview:free',
   ANTHROPIC_DEFAULT_HAIKU_MODEL:  'tencent/hy3-preview:free',
 };
+const OPENROUTER_OWL_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL:   'openrouter/owl-alpha',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'openrouter/owl-alpha',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:  'openrouter/owl-alpha',
+};
 const OPENROUTER_ENV = {
   ANTHROPIC_BASE_URL: OPENROUTER_BASE_URL,
   ANTHROPIC_API_KEY: '',  // Must be explicitly empty to prevent conflicts
@@ -254,6 +259,7 @@ function currentMode(settings) {
     if (opus.includes('ling')) return 'openrouter-ling';
     if (opus.includes('ring')) return 'openrouter-ring';
     if (opus.includes('tencent') || opus.includes('hy3')) return 'openrouter-tencent';
+    if (opus.includes('owl')) return 'openrouter-owl';
     return 'openrouter';
   }
   return 'claude';
@@ -332,6 +338,7 @@ function status() {
       'openrouter-ling': 'Ling',
       'openrouter-ring': 'Ring',
       'openrouter-tencent': 'Tencent HY3',
+      'openrouter-owl': 'Owl Alpha',
     };
     console.log('Active mode: OpenRouter (' + (tierNames[mode] || 'Claude') + ')');
     console.log('  Base URL : ' + settings.env.ANTHROPIC_BASE_URL);
@@ -649,6 +656,10 @@ function useTencent() {
   useOpenRouter('tencent');
 }
 
+function useOwl() {
+  useOpenRouter('owl');
+}
+
 function useRing() {
   useOpenRouter('ring');
 }
@@ -691,6 +702,7 @@ function useOpenRouter(tier = 'default') {
     'ling': OPENROUTER_LING_MODELS,
     'ring': OPENROUTER_RING_MODELS,
     'tencent': OPENROUTER_TENCENT_MODELS,
+    'owl': OPENROUTER_OWL_MODELS,
   };
 
   if (tierModels[tier]) {
@@ -1183,7 +1195,7 @@ function help() {
     '  gcl-switcher use glm51                   Switch to GLM-5.1 (latest for all GLM plans)',
     '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
     '  gcl-switcher use glm5turbo               Switch to GLM-5-Turbo (fast high-end)',
-    '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter|nemotron|elephant|ling|ring|tencent)',
+    '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter|nemotron|elephant|ling|ring|tencent|owl)',
     '  gcl-switcher use stepfun                 Switch to StepFun (shortcut)',
     '  gcl-switcher use nemotron                Switch to Nemotron (shortcut)',
     '  gcl-switcher use minimax                 Switch to Minimax (shortcut)',
@@ -1192,6 +1204,7 @@ function help() {
     '  gcl-switcher use ling                    Switch to Ling 2.6 Flash (shortcut)',
     '  gcl-switcher use ring                    Switch to Ring 2.6 (shortcut)',
     '  gcl-switcher use tencent                 Switch to Tencent HY3 Preview (shortcut)',
+    '  gcl-switcher use owl                     Switch to Owl Alpha (shortcut)',
     '  gcl-switcher use lmstudio                Switch to LM Studio (local:1234)',
     '  gcl-switcher use dflash                  Switch to DFlash (local:8000 mlx)',
     '  gcl-switcher use kimi                    Switch to Kimi (NVIDIA direct)',
@@ -1240,6 +1253,7 @@ function help() {
     '  gcl-switcher use ling                     # Ling 2.6 Flash (shortcut)',
     '  gcl-switcher use ring                     # Ring 2.6 (shortcut)',
     '  gcl-switcher use tencent                  # Tencent HY3 Preview (shortcut)',
+    '  gcl-switcher use owl                      # Owl Alpha (shortcut)',
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
@@ -1268,6 +1282,7 @@ function help() {
     '  ling     - InclusionAI Ling 2.6 Flash (free)',
     '  ring     - InclusionAI Ring 2.6 (free)',
     '  tencent  - Tencent HY3 Preview (free)',
+    '  owl      - Owl Alpha',
     '',
     'OpenRouter Features:',
     '  - Provider failover for high availability',
@@ -1305,6 +1320,7 @@ switch (cmd) {
     else if (sub === 'ling')       useLing();
     else if (sub === 'ring')       useRing();
     else if (sub === 'tencent')    useTencent();
+    else if (sub === 'owl')        useOwl();
     else if (sub === 'lmstudio')   useLmStudio();
     else if (sub === 'dflash')     useDflash();
     else if (sub === 'kimi')       useKimi();
@@ -1312,7 +1328,7 @@ switch (cmd) {
     else if (sub === 'mimo')       useMimo(arg3);
     else if (sub === 'omniroute')  useOmniroute();
     else if (sub === 'claude')     useClaude();
-    else { console.error('Usage: gcl-switcher use <glm|glm47|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|lmstudio|dflash|kimi|mimo|omniroute|claude>'); process.exit(1); }
+    else { console.error('Usage: gcl-switcher use <glm|glm47|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|owl|lmstudio|dflash|kimi|mimo|omniroute|claude>'); process.exit(1); }
     break;
 
   case 'set-key':
