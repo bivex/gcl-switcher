@@ -1,0 +1,259 @@
+/**
+ * Provider-specific configurations and constants.
+ */
+
+'use strict';
+
+const path = require('path');
+const os = require('os');
+
+const SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');
+const CONFIG_PATH = path.join(os.homedir(), '.gcl-switcher.json');
+
+const GLM_BASE_URL = 'https://api.z.ai/api/anthropic';
+
+const GLM_ENV = {
+  ANTHROPIC_BASE_URL: GLM_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'glm-4.7',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-4.7',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'glm-4.5-air',
+};
+
+const GLM5_ENV = {
+  ANTHROPIC_BASE_URL: GLM_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'glm-5',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'glm-5',
+  API_TIMEOUT_MS: '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const GLM51_ENV = {
+  ANTHROPIC_BASE_URL: GLM_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'glm-5.1',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5.1',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'glm-5.1',
+  API_TIMEOUT_MS: '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const GLM5_TURBO_ENV = {
+  ANTHROPIC_BASE_URL: GLM_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'glm-5-turbo',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5-turbo',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'glm-5-turbo',
+  API_TIMEOUT_MS: '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
+const KIMI_ENV = {
+  ANTHROPIC_BASE_URL: NVIDIA_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'moonshotai/kimi-k2.5',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'moonshotai/kimi-k2.5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'moonshotai/kimi-k2.5',
+  ANTHROPIC_MODEL: 'moonshotai/kimi-k2.5',
+  API_TIMEOUT_MS: '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const KIMI_BRIDGE_ENV = {
+  ANTHROPIC_BASE_URL: 'http://127.0.0.1:8080/v1',
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'moonshotai/kimi-k2.5',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'moonshotai/kimi-k2.5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'moonshotai/kimi-k2.5',
+  ANTHROPIC_MODEL: 'moonshotai/kimi-k2.5',
+  API_TIMEOUT_MS: '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const LM_STUDIO_BASE_URL = 'http://localhost:1234';
+const LM_STUDIO_TOKEN = 'lm-studio';
+const LM_STUDIO_ENV = {
+  ANTHROPIC_BASE_URL: LM_STUDIO_BASE_URL,
+  ANTHROPIC_MODEL: 'default',
+};
+
+const DFLASH_BASE_URL = 'http://localhost:8000/v1';
+const DFLASH_TOKEN = 'dflash-token';
+const DFLASH_ENV = {
+  ANTHROPIC_BASE_URL: DFLASH_BASE_URL,
+  ANTHROPIC_MODEL: 'dflash-mlx',
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'dflash-mlx',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'dflash-mlx',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'dflash-mlx',
+  API_TIMEOUT_MS: '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api';
+const OPENROUTER_ENV = {
+  ANTHROPIC_BASE_URL: OPENROUTER_BASE_URL,
+  ANTHROPIC_API_KEY: '',
+};
+
+const OPENROUTER_DEFAULT_MODELS = {
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'anthropic/claude-opus-4-20250514',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'anthropic/claude-sonnet-4-20250514',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'anthropic/claude-3-5-haiku-20241022',
+};
+
+const OPENROUTER_TIER_MODELS = {
+  'free': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'google/gemma-3-27b-it',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'google/gemma-3-27b-it',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'google/gemma-3-4b-it',
+  },
+  'gemini': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'google/gemini-2.5-pro',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'google/gemini-2.5-flash',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'google/gemini-2.0-flash-exp',
+  },
+  'gpt': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'openai/o3-mini',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'openai/gpt-4o',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'openai/gpt-4o-mini',
+  },
+  'stepfun': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'stepfun/step-3.5-flash:free',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'stepfun/step-3.5-flash:free',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'stepfun/step-3.5-flash:free',
+  },
+  'hunter': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'openrouter/hunter-alpha',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'openrouter/hunter-alpha',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'openrouter/hunter-alpha',
+  },
+  'nemotron': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'nvidia/nemotron-3-super-120b-a12b:free',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'nvidia/nemotron-3-super-120b-a12b:free',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'nvidia/nemotron-3-super-120b-a12b:free',
+  },
+  'minimax': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'minimax/minimax-m2.5:free',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'minimax/minimax-m2.5:free',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'minimax/minimax-m2.5:free',
+  },
+  'arcee': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'arcee-ai/trinity-large-preview:free',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'arcee-ai/trinity-large-preview:free',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'arcee-ai/trinity-large-preview:free',
+  },
+  'elephant': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'openrouter/elephant-alpha',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'openrouter/elephant-alpha',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'openrouter/elephant-alpha',
+  },
+  'ring': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'inclusionai/ring-2.6-1t:free',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'inclusionai/ring-2.6-1t:free',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'inclusionai/ring-2.6-1t:free',
+  },
+  'ling': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'inclusionai/ling-2.6-flash:free',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'inclusionai/ling-2.6-flash:free',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'inclusionai/ling-2.6-flash:free',
+  },
+  'tencent': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'tencent/hy3-preview:free',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'tencent/hy3-preview:free',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'tencent/hy3-preview:free',
+  },
+  'owl': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'openrouter/owl-alpha',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'openrouter/owl-alpha',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'openrouter/owl-alpha',
+  },
+};
+
+const OMNIROUTE_BASE_URL = 'http://localhost:20128/v1';
+const OMNIROUTE_ENV = {
+  ANTHROPIC_BASE_URL: OMNIROUTE_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'default',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'default',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'default',
+  ANTHROPIC_MODEL: 'default',
+  API_TIMEOUT_MS: '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const MIMO_BASE_URL = 'https://token-plan-sgp.xiaomimimo.com/anthropic';
+const MIMO_ENV = {
+  ANTHROPIC_BASE_URL: MIMO_BASE_URL,
+  ANTHROPIC_DEFAULT_OPUS_MODEL: 'mimo-v2.5-pro',
+  ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2.5',
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: 'mimo-v2.5-flash',
+  ANTHROPIC_MODEL: 'mimo-v2.5-pro',
+  API_TIMEOUT_MS: '300000',
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'true',
+};
+
+const MIMO_TIER_MODELS = {
+  'v2.5': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'mimo-v2.5-pro',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2.5',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'mimo-v2.5-flash',
+    ANTHROPIC_MODEL: 'mimo-v2.5-pro',
+  },
+  'v2': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'mimo-v2-pro',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2-omni',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'mimo-v2-tts',
+    ANTHROPIC_MODEL: 'mimo-v2-pro',
+  },
+  'flash': {
+    ANTHROPIC_DEFAULT_OPUS_MODEL: 'mimo-v2.5-flash',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: 'mimo-v2.5-flash',
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: 'mimo-v2.5-flash',
+    ANTHROPIC_MODEL: 'mimo-v2.5-flash',
+  }
+};
+
+const GLM_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM_ENV), 'ANTHROPIC_BASE_URL'];
+const GLM5_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const GLM51_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM51_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const GLM5_TURBO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(GLM5_TURBO_ENV), 'ANTHROPIC_BASE_URL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const LM_STUDIO_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL'];
+const DFLASH_KEYS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const OPENROUTER_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL'];
+const KIMI_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(KIMI_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const MIMO_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(MIMO_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+const OMNIROUTE_KEYS = ['ANTHROPIC_AUTH_TOKEN', ...Object.keys(OMNIROUTE_ENV), 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_MODEL', 'API_TIMEOUT_MS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'];
+
+const ALL_PROVIDER_KEYS = [
+  ...GLM_KEYS,
+  ...GLM5_KEYS,
+  ...GLM51_KEYS,
+  ...GLM5_TURBO_KEYS,
+  ...LM_STUDIO_KEYS,
+  ...DFLASH_KEYS,
+  ...OPENROUTER_KEYS,
+  ...KIMI_KEYS,
+  ...MIMO_KEYS,
+  ...OMNIROUTE_KEYS
+];
+
+// Unique set of all keys to clear
+const UNIQUE_PROVIDER_KEYS = Array.from(new Set(ALL_PROVIDER_KEYS));
+
+module.exports = {
+  SETTINGS_PATH,
+  CONFIG_PATH,
+  GLM_ENV,
+  GLM5_ENV,
+  GLM51_ENV,
+  GLM5_TURBO_ENV,
+  KIMI_ENV,
+  KIMI_BRIDGE_ENV,
+  LM_STUDIO_ENV,
+  LM_STUDIO_TOKEN,
+  DFLASH_ENV,
+  DFLASH_TOKEN,
+  OPENROUTER_ENV,
+  OPENROUTER_DEFAULT_MODELS,
+  OPENROUTER_TIER_MODELS,
+  OMNIROUTE_ENV,
+  MIMO_ENV,
+  MIMO_TIER_MODELS,
+  UNIQUE_PROVIDER_KEYS
+};
