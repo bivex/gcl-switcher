@@ -28,6 +28,7 @@ switch (cmd) {
 
   case 'use':
     if (sub === 'glm' || sub === 'glm47') commands.useGlmVariant('glm47');
+    else if (sub === 'glm52')      commands.useGlmVariant('glm52');
     else if (sub === 'glm51')      commands.useGlmVariant('glm51');
     else if (sub === 'glm5')       commands.useGlmVariant('glm5');
     else if (sub === 'glm5turbo')  commands.useGlmVariant('glm5turbo');
@@ -43,7 +44,7 @@ switch (cmd) {
     else if (sub === 'omniroute')  commands.useOmniroute();
     else if (sub === 'claude')     commands.useClaude();
     else {
-      console.error('Usage: gcl-switcher use <glm|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|owl|lmstudio|dflash|kimi|mimo|omniroute|claude>');
+      console.error('Usage: gcl-switcher use <glm|glm52|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|owl|lmstudio|dflash|kimi|mimo|omniroute|claude>');
       process.exit(1);
     }
     break;

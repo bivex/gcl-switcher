@@ -40,6 +40,7 @@ function currentMode(settings) {
   const opus = settings?.env?.ANTHROPIC_DEFAULT_OPUS_MODEL ?? '';
 
   if (url.includes('z.ai')) {
+    if (opus === 'glm-5.2') return 'glm52';
     if (opus === 'glm-5.1') return 'glm51';
     if (opus === 'glm-5-turbo') return 'glm5turbo';
     if (opus === 'glm-5') return 'glm5';

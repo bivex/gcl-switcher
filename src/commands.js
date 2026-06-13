@@ -12,6 +12,7 @@ const {
   GLM_ENV,
   GLM5_ENV,
   GLM51_ENV,
+  GLM52_ENV,
   GLM5_TURBO_ENV,
   LM_STUDIO_ENV,
   LM_STUDIO_TOKEN,
@@ -60,6 +61,7 @@ function status() {
   const mode = currentMode(settings);
 
   const displayMap = {
+    'glm52': 'GLM-5.2 (z.ai)',
     'glm51': 'GLM-5.1 (z.ai)',
     'glm5turbo': 'GLM-5-Turbo (z.ai)',
     'glm5': 'GLM-5 (z.ai)',
@@ -128,7 +130,7 @@ function status() {
     }
   }
 
-  if (['glm47', 'glm5', 'glm51', 'glm5turbo'].includes(mode) && !config.glmApiKey) {
+  if (['glm47', 'glm5', 'glm51', 'glm52', 'glm5turbo'].includes(mode) && !config.glmApiKey) {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
   }
 }
@@ -145,6 +147,7 @@ function useGlmVariant(variant) {
     'glm47': { name: 'GLM-4.7 (z.ai)', env: GLM_ENV },
     'glm5': { name: 'GLM-5 (z.ai)', env: GLM5_ENV },
     'glm51': { name: 'GLM-5.1 (z.ai)', env: GLM51_ENV },
+    'glm52': { name: 'GLM-5.2 (z.ai)', env: GLM52_ENV },
     'glm5turbo': { name: 'GLM-5-Turbo (z.ai)', env: GLM5_TURBO_ENV }
   };
 
@@ -442,6 +445,7 @@ function help() {
     '  gcl-switcher use glm                     Switch to GLM-4.7 (z.ai)',
     '  gcl-switcher use glm47                   Switch to GLM-4.7 (alias)',
     '  gcl-switcher use glm51                   Switch to GLM-5.1 (latest for all GLM plans)',
+    '  gcl-switcher use glm52                   Switch to GLM-5.2 (latest GLM release)',
     '  gcl-switcher use glm5                    Switch to GLM-5 (coding optimized)',
     '  gcl-switcher use glm5turbo               Switch to GLM-5-Turbo (fast high-end)',
     '  gcl-switcher use openrouter [tier]       Switch to OpenRouter (claude|free|gemini|gpt|stepfun|hunter|nemotron|elephant|ling|ring|tencent|owl)',
@@ -485,6 +489,7 @@ function help() {
     'Quickstart (GLM):',
     '  gcl-switcher set-key sk-xxxxxxx          # save key once',
     '  gcl-switcher use glm51                   # activate GLM-5.1 (best default on z.ai)',
+    '  gcl-switcher use glm52                   # activate GLM-5.2 (latest)',
     '  gcl-switcher use glm5                    # activate GLM-5 (best for coding)',
     '  gcl-switcher use glm5turbo               # activate GLM-5-Turbo',
     '',

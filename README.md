@@ -17,6 +17,9 @@ gcl-switcher set-key sk-xxxxxxxxxxxxxxxx
 # Switch to GLM-5.1 (recommended default on z.ai)
 gcl-switcher use glm51
 
+# Switch to GLM-5.2
+gcl-switcher use glm52
+
 # Switch to GLM-5
 gcl-switcher use glm5
 
@@ -52,6 +55,7 @@ gcl-switcher status
 | `gcl-switcher status` | Show active mode and current settings |
 | `gcl-switcher use glm` | Switch to GLM-4.7 (z.ai) |
 | `gcl-switcher use glm51` | Switch to GLM-5.1 (z.ai, latest on all GLM Coding plans) |
+| `gcl-switcher use glm52` | Switch to GLM-5.2 (z.ai, latest GLM release) |
 | `gcl-switcher use glm5` | Switch to GLM-5 (z.ai, coding optimized) |
 | `gcl-switcher use glm5turbo` | Switch to GLM-5-Turbo (z.ai, faster premium profile) |
 | `gcl-switcher use openrouter [tier]` | Switch to OpenRouter (claude\|free\|gemini\|gpt\|stepfun\|hunter\|elephant\|ling\|ring\|tencent) |
@@ -105,6 +109,22 @@ gcl-switcher status
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5",
+    "API_TIMEOUT_MS": "300000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "true"
+  }
+}
+```
+
+**`use glm52`** uses `glm-5.2` for all model tiers with coding optimizations:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "<your_key>",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.2",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.2",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5.2",
     "API_TIMEOUT_MS": "300000",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "true"
   }
@@ -201,6 +221,7 @@ Browse available models at [openrouter.ai/models](https://openrouter.ai/models)
 
 Latest z.ai coding modes supported by `gcl-switcher`:
 
+- **`glm52`** - `GLM-5.2`, latest GLM release and available on all GLM Coding plans
 - **`glm51`** - `GLM-5.1`, best default choice and available on all GLM Coding plans
 - **`glm5`** - `GLM-5`, higher-end coding model
 - **`glm5turbo`** - `GLM-5-Turbo`, faster premium variant
