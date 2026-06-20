@@ -25,7 +25,8 @@ const {
   OMNIROUTE_ENV,
   OPENROUTER_ENV,
   OPENROUTER_DEFAULT_MODELS,
-  OPENROUTER_TIER_MODELS
+  OPENROUTER_TIER_MODELS,
+  OPENMODEL_ENV
 } = require('./constants');
 
 /**
@@ -72,6 +73,7 @@ function status() {
     'kimi-bridge': 'Kimi (NVIDIA Bridge)',
     'omniroute': 'Omniroute (local)',
     'mimo': 'MiMo (xiaomimimo.com)',
+    'openmodel': 'OpenModel (api.openmodel.app)',
     'claude': 'Claude (native)'
   };
 
@@ -121,17 +123,21 @@ function status() {
     { label: 'NVIDIA key', val: config.nvidiaApiKey },
     { label: 'MiMo key', val: config.mimoApiKey },
     { label: 'OpenRouter key', val: config.openrouterApiKey },
-    { label: 'Omniroute key', val: config.omnirouteApiKey }
+    { label: 'Omniroute key', val: config.omnirouteApiKey },
+    { label: 'OpenModel key', val: config.openmodelApiKey }
   ];
 
   for (const k of keys) {
     if (k.val) {
-      console.log(`  ${k.label.padEnd(10)}: ${k.val.slice(0, 8)}...${k.val.slice(-4)}`);
+      console.log(`  ${k.label.padEnd(14)}: ${k.val.slice(0, 8)}...${k.val.slice(-4)}`);
     }
   }
 
   if (['glm47', 'glm5', 'glm51', 'glm52', 'glm5turbo'].includes(mode) && !config.glmApiKey) {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
+  }
+  if (mode === 'openmodel' && !config.openmodelApiKey) {
+    console.log('  WARNING  : no API key saved — run: gcl-switcher set-openmodel-key <key>');
   }
 }
 
@@ -312,12 +318,41 @@ function useOmniroute() {
   switchProvider({
     name: 'Omniroute (local)',
     env,
-    token: key,
-    apiKey: key
+    token: key
   });
 
   if (config.omnirouteBaseUrl) console.log(`Using custom URL: ${config.omnirouteBaseUrl}`);
   if (config.omnirouteModel) console.log(`Using custom model: ${config.omnirouteModel}`);
+}
+
+function useOpenmodel() {
+  const config = readJson(CONFIG_PATH);
+  const key = config.openmodelApiKey;
+
+  if (!key) {
+    console.error('No OpenModel API key saved. Run first:\n  gcl-switcher set-openmodel-key <your_openmodel_api_key>');
+    process.exit(1);
+  }
+
+  const env = { ...OPENMODEL_ENV };
+
+  if (config.openmodelBaseUrl) env.ANTHROPIC_BASE_URL = config.openmodelBaseUrl;
+  if (config.openmodelModel) {
+    env.ANTHROPIC_MODEL = config.openmodelModel;
+    env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.openmodelModel;
+    env.ANTHROPIC_DEFAULT_SONNET_MODEL = config.openmodelModel;
+    env.ANTHROPIC_DEFAULT_HAIKU_MODEL = config.openmodelModel;
+  }
+
+  switchProvider({
+    name: 'OpenModel (Unified AI API Gateway)',
+    env,
+    token: key,
+    apiKey: key
+  });
+
+  if (config.openmodelBaseUrl) console.log(`Using custom URL: ${config.openmodelBaseUrl}`);
+  if (config.openmodelModel) console.log(`Using custom model: ${config.openmodelModel}`);
 }
 
 // ── Setters ────────────────────────────────────────────────────────────────
@@ -363,6 +398,10 @@ function setOmnirouteKey(key) {
   setConfigValue('omnirouteApiKey', key, v => `Omniroute API key saved: ${v.slice(0, 8)}...${v.slice(-4)}`);
 }
 
+function setOpenmodelKey(key) {
+  setConfigValue('openmodelApiKey', key, v => `OpenModel API key saved: ${v.slice(0, 8)}...${v.slice(-4)}`);
+}
+
 function setProviderModel(provider, model) {
   if (!model) {
     console.error(`Usage: gcl-switcher set-${provider}-model <model_id>`);
@@ -378,6 +417,7 @@ function setProviderModel(provider, model) {
     if (provider === 'mimo') useMimo();
     if (provider === 'omniroute') useOmniroute();
     if (provider === 'dflash') useDflash();
+    if (provider === 'openmodel') useOpenmodel();
   }
 }
 
@@ -396,6 +436,7 @@ function setProviderUrl(provider, url) {
     if (provider === 'mimo') useMimo();
     if (provider === 'omniroute') useOmniroute();
     if (provider === 'dflash') useDflash();
+    if (provider === 'openmodel') useOpenmodel();
   }
 }
 
@@ -413,6 +454,7 @@ function resetProvider(provider) {
     if (provider === 'mimo') useMimo();
     if (provider === 'omniroute') useOmniroute();
     if (provider === 'dflash') useDflash();
+    if (provider === 'openmodel') useOpenmodel();
   }
 }
 
@@ -464,6 +506,7 @@ function help() {
     '  gcl-switcher use kimi-bridge             Switch to Kimi (NVIDIA Bridge)',
     '  gcl-switcher use mimo [v2.5|v2|flash]    Switch to MiMo (xiaomimimo.com)',
     '  gcl-switcher use omniroute               Switch to Omniroute (local:20128)',
+    '  gcl-switcher use openmodel               Switch to OpenModel (api.openmodel.app)',
     '  gcl-switcher bridge                      Start local Kimi bridge server',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
@@ -472,6 +515,7 @@ function help() {
     '  gcl-switcher set-nvidia-key <key>        Save your NVIDIA API key',
     '  gcl-switcher set-mimo-key <key>          Save your MiMo API key',
     '  gcl-switcher set-omniroute-key <key>     Save your Omniroute API key',
+    '  gcl-switcher set-openmodel-key <key>     Save your OpenModel API key',
     '  gcl-switcher set-openrouter-models <tier> <model>  Set custom model',
     '  gcl-switcher set-dflash-model <model_id> Set custom DFlash model',
     '  gcl-switcher set-dflash-url <url>        Set custom DFlash URL',
@@ -484,6 +528,9 @@ function help() {
     '  gcl-switcher set-omniroute-model <model> Set custom Omniroute model',
     '  gcl-switcher set-omniroute-url <url>     Set custom Omniroute URL',
     '  gcl-switcher reset-omniroute             Reset Omniroute to defaults',
+    '  gcl-switcher set-openmodel-model <model> Set custom OpenModel model',
+    '  gcl-switcher set-openmodel-url <url>     Set custom OpenModel URL',
+    '  gcl-switcher reset-openmodel             Reset OpenModel to defaults',
     '  gcl-switcher help                        Show this help',
     '',
     'Quickstart (GLM):',
@@ -509,6 +556,10 @@ function help() {
     '  gcl-switcher use tencent                  # Tencent HY3 Preview (shortcut)',
     '  gcl-switcher use owl                      # Owl Alpha (shortcut)',
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
+    '',
+    'Quickstart (OpenModel):',
+    '  gcl-switcher set-openmodel-key om_xxxxxx  # save key once',
+    '  gcl-switcher use openmodel                # activate OpenModel',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',
     '',
@@ -561,12 +612,14 @@ module.exports = {
   useOpenRouter,
   useMimo,
   useOmniroute,
+  useOpenmodel,
   setKey,
   getKey,
   setOpenRouterKey,
   setNvidiaKey,
   setMimoKey,
   setOmnirouteKey,
+  setOpenmodelKey,
   setProviderModel,
   setProviderUrl,
   resetProvider,

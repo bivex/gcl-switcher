@@ -42,9 +42,10 @@ switch (cmd) {
     else if (sub === 'kimi-bridge') commands.useKimi(true);
     else if (sub === 'mimo')       commands.useMimo(arg3);
     else if (sub === 'omniroute')  commands.useOmniroute();
+    else if (sub === 'openmodel')  commands.useOpenmodel();
     else if (sub === 'claude')     commands.useClaude();
     else {
-      console.error('Usage: gcl-switcher use <glm|glm52|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|owl|lmstudio|dflash|kimi|mimo|omniroute|claude>');
+      console.error('Usage: gcl-switcher use <glm|glm52|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|owl|lmstudio|dflash|kimi|mimo|omniroute|openmodel|claude>');
       process.exit(1);
     }
     break;
@@ -111,6 +112,22 @@ switch (cmd) {
 
   case 'reset-omniroute':
     commands.resetProvider('omniroute');
+    break;
+
+  case 'set-openmodel-key':
+    commands.setOpenmodelKey(sub);
+    break;
+
+  case 'set-openmodel-model':
+    commands.setProviderModel('openmodel', sub);
+    break;
+
+  case 'set-openmodel-url':
+    commands.setProviderUrl('openmodel', sub);
+    break;
+
+  case 'reset-openmodel':
+    commands.resetProvider('openmodel');
     break;
 
   case 'set-openrouter-models':

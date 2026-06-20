@@ -59,12 +59,16 @@ gcl-switcher status
 | `gcl-switcher use glm5` | Switch to GLM-5 (z.ai, coding optimized) |
 | `gcl-switcher use glm5turbo` | Switch to GLM-5-Turbo (z.ai, faster premium profile) |
 | `gcl-switcher use openrouter [tier]` | Switch to OpenRouter (claude\|free\|gemini\|gpt\|stepfun\|hunter\|elephant\|ling\|ring\|tencent) |
+| `gcl-switcher use openmodel` | Switch to OpenModel (Unified AI API Gateway) |
 | `gcl-switcher use lmstudio` | Switch to LM Studio (local) |
 | `gcl-switcher use claude` | Switch to native Claude |
 | `gcl-switcher set-key <api_key>` | Save your z.ai API key |
 | `gcl-switcher get-key` | Print your saved z.ai API key |
 | `gcl-switcher set-openrouter-key <key>` | Save your OpenRouter API key |
+| `gcl-switcher set-openmodel-key <key>` | Save your OpenModel API key |
 | `gcl-switcher set-openrouter-models <tier> <model>` | Set custom OpenRouter model |
+| `gcl-switcher set-openmodel-model <model_id>` | Set custom OpenModel model |
+| `gcl-switcher set-openmodel-url <url>` | Set custom OpenModel URL |
 | `gcl-switcher help` | Show help |
 
 ## How it works
@@ -208,6 +212,22 @@ gcl-switcher use openrouter
 
 Browse available models at [openrouter.ai/models](https://openrouter.ai/models)
 
+**`use openmodel`** adds to `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "<your_openmodel_key>",
+    "ANTHROPIC_BASE_URL": "https://api.openmodel.app/v1",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-3-5-sonnet",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-3-5-sonnet",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-3-5-sonnet",
+    "API_TIMEOUT_MS": "300000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "true"
+  }
+}
+```
+
 **`use claude`** removes those fields, leaving the rest of your settings untouched.
 
 ## Config files
@@ -243,6 +263,22 @@ OpenRouter adds reliability and management between Claude Code and Anthropic's A
 - **Model Tiers** - Quick switching between Claude, Free (Gemma), Gemini, GPT, and StepFun models
 
 Get an API key at [openrouter.ai/keys](https://openrouter.ai/keys)
+
+## OpenModel
+
+OpenModel is a unified AI API gateway that allows you to access major AI models through a single API key:
+
+- **Unified AI API Gateway** - One API key to access all major models from OpenAI, Anthropic, and Gemini.
+- **Multi-Format Compatibility** - Supports native Anthropic, OpenAI, and Gemini compatible endpoints seamlessly.
+- **Simplified Setup** - Start your applications or configure development tools (like Claude Code) with zero code changes.
+
+To get started, save your key and switch provider:
+```bash
+gcl-switcher set-openmodel-key om_******
+gcl-switcher use openmodel
+```
+
+Get an API key at [openmodel.app](https://openmodel.app)
 
 ## Notes
 
