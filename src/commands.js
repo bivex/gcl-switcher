@@ -558,7 +558,7 @@ function help() {
     '  gcl-switcher use openrouter hunter        # Hunter Alpha',
     '',
     'Quickstart (OpenModel):',
-    '  gcl-switcher set-openmodel-key om_xxxxxx  # save key once',
+    '  gcl-switcher set-openmodel-key om-xxxxxx  # save key once',
     '  gcl-switcher use openmodel                # activate OpenModel',
     '',
     '  gcl-switcher use claude                  # go back to native Claude',

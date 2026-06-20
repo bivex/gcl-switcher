@@ -274,7 +274,7 @@ OpenModel is a unified AI API gateway that allows you to access major AI models 
 
 To get started, save your key and switch provider:
 ```bash
-gcl-switcher set-openmodel-key om_******
+gcl-switcher set-openmodel-key om-******
 gcl-switcher use openmodel
 ```
 
