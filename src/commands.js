@@ -26,7 +26,8 @@ const {
   OPENROUTER_ENV,
   OPENROUTER_DEFAULT_MODELS,
   OPENROUTER_TIER_MODELS,
-  OPENMODEL_ENV
+  OPENMODEL_ENV,
+  OPENMODEL_BRIDGE_ENV
 } = require('./constants');
 
 /**
@@ -74,6 +75,7 @@ function status() {
     'omniroute': 'Omniroute (local)',
     'mimo': 'MiMo (xiaomimimo.com)',
     'openmodel': 'OpenModel (api.openmodel.ai)',
+    'openmodel-bridge': 'OpenModel (Bridge)',
     'claude': 'Claude (native)'
   };
 
@@ -112,7 +114,7 @@ function status() {
       if (mode === 'lmstudio' && settings.env.ANTHROPIC_AUTH_TOKEN) {
          console.log(`  Token    : ${settings.env.ANTHROPIC_AUTH_TOKEN}`);
       }
-      if (mode === 'kimi-bridge') {
+      if (mode === 'kimi-bridge' || mode === 'openmodel-bridge') {
          console.log('  Note     : ensure "gcl-switcher bridge" is running');
       }
     }
@@ -136,7 +138,7 @@ function status() {
   if (['glm47', 'glm5', 'glm51', 'glm52', 'glm5turbo'].includes(mode) && !config.glmApiKey) {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-key <key>');
   }
-  if (mode === 'openmodel' && !config.openmodelApiKey) {
+  if (['openmodel', 'openmodel-bridge'].includes(mode) && !config.openmodelApiKey) {
     console.log('  WARNING  : no API key saved — run: gcl-switcher set-openmodel-key <key>');
   }
 }
@@ -325,7 +327,7 @@ function useOmniroute() {
   if (config.omnirouteModel) console.log(`Using custom model: ${config.omnirouteModel}`);
 }
 
-function useOpenmodel() {
+function useOpenmodel(bridge = false) {
   const config = readJson(CONFIG_PATH);
   const key = config.openmodelApiKey;
 
@@ -334,25 +336,31 @@ function useOpenmodel() {
     process.exit(1);
   }
 
-  const env = { ...OPENMODEL_ENV };
+  const env = { ...(bridge ? OPENMODEL_BRIDGE_ENV : OPENMODEL_ENV) };
 
-  if (config.openmodelBaseUrl) env.ANTHROPIC_BASE_URL = config.openmodelBaseUrl;
-  if (config.openmodelModel) {
-    env.ANTHROPIC_MODEL = config.openmodelModel;
-    env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.openmodelModel;
-    env.ANTHROPIC_DEFAULT_SONNET_MODEL = config.openmodelModel;
-    env.ANTHROPIC_DEFAULT_HAIKU_MODEL = config.openmodelModel;
+  if (!bridge) {
+    if (config.openmodelBaseUrl) env.ANTHROPIC_BASE_URL = config.openmodelBaseUrl;
+    if (config.openmodelModel) {
+      env.ANTHROPIC_MODEL = config.openmodelModel;
+      env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.openmodelModel;
+      env.ANTHROPIC_DEFAULT_SONNET_MODEL = config.openmodelModel;
+      env.ANTHROPIC_DEFAULT_HAIKU_MODEL = config.openmodelModel;
+    }
   }
 
   switchProvider({
-    name: 'OpenModel (Unified AI API Gateway)',
+    name: bridge ? 'OpenModel (Bridge)' : 'OpenModel (Unified AI API Gateway)',
     env,
     token: key,
     apiKey: key
   });
 
-  if (config.openmodelBaseUrl) console.log(`Using custom URL: ${config.openmodelBaseUrl}`);
-  if (config.openmodelModel) console.log(`Using custom model: ${config.openmodelModel}`);
+  if (bridge) {
+    console.log('Next: keep "gcl-switcher bridge" running in a separate terminal.');
+  } else {
+    if (config.openmodelBaseUrl) console.log(`Using custom URL: ${config.openmodelBaseUrl}`);
+    if (config.openmodelModel) console.log(`Using custom model: ${config.openmodelModel}`);
+  }
 }
 
 // ── Setters ────────────────────────────────────────────────────────────────
@@ -412,12 +420,13 @@ function setProviderModel(provider, model) {
   
   const settings = readJson(SETTINGS_PATH);
   const mode = currentMode(settings);
-  if (mode === provider) {
-    if (provider === 'kimi') useKimi();
+  if (mode === provider || mode === `${provider}-bridge`) {
+    const isBridge = mode.endsWith('-bridge');
+    if (provider === 'kimi') useKimi(isBridge);
     if (provider === 'mimo') useMimo();
     if (provider === 'omniroute') useOmniroute();
     if (provider === 'dflash') useDflash();
-    if (provider === 'openmodel') useOpenmodel();
+    if (provider === 'openmodel') useOpenmodel(isBridge);
   }
 }
 
@@ -431,12 +440,13 @@ function setProviderUrl(provider, url) {
   
   const settings = readJson(SETTINGS_PATH);
   const mode = currentMode(settings);
-  if (mode === provider) {
-    if (provider === 'kimi') useKimi();
+  if (mode === provider || mode === `${provider}-bridge`) {
+    const isBridge = mode.endsWith('-bridge');
+    if (provider === 'kimi') useKimi(isBridge);
     if (provider === 'mimo') useMimo();
     if (provider === 'omniroute') useOmniroute();
     if (provider === 'dflash') useDflash();
-    if (provider === 'openmodel') useOpenmodel();
+    if (provider === 'openmodel') useOpenmodel(isBridge);
   }
 }
 
@@ -449,12 +459,13 @@ function resetProvider(provider) {
   
   const settings = readJson(SETTINGS_PATH);
   const mode = currentMode(settings);
-  if (mode === provider) {
-    if (provider === 'kimi') useKimi();
+  if (mode === provider || mode === `${provider}-bridge`) {
+    const isBridge = mode.endsWith('-bridge');
+    if (provider === 'kimi') useKimi(isBridge);
     if (provider === 'mimo') useMimo();
     if (provider === 'omniroute') useOmniroute();
     if (provider === 'dflash') useDflash();
-    if (provider === 'openmodel') useOpenmodel();
+    if (provider === 'openmodel') useOpenmodel(isBridge);
   }
 }
 
@@ -507,6 +518,7 @@ function help() {
     '  gcl-switcher use mimo [v2.5|v2|flash]    Switch to MiMo (xiaomimimo.com)',
     '  gcl-switcher use omniroute               Switch to Omniroute (local:20128)',
     '  gcl-switcher use openmodel               Switch to OpenModel (api.openmodel.ai)',
+    '  gcl-switcher use openmodel-bridge        Switch to OpenModel (local bridge:8082)',
     '  gcl-switcher bridge                      Start local Kimi bridge server',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',

@@ -43,9 +43,10 @@ switch (cmd) {
     else if (sub === 'mimo')       commands.useMimo(arg3);
     else if (sub === 'omniroute')  commands.useOmniroute();
     else if (sub === 'openmodel')  commands.useOpenmodel();
+    else if (sub === 'openmodel-bridge') commands.useOpenmodel(true);
     else if (sub === 'claude')     commands.useClaude();
     else {
-      console.error('Usage: gcl-switcher use <glm|glm52|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|owl|lmstudio|dflash|kimi|mimo|omniroute|openmodel|claude>');
+      console.error('Usage: gcl-switcher use <glm|glm52|glm51|glm5|glm5turbo|openrouter [tier]|stepfun|nemotron|minimax|arcee|elephant|ling|ring|tencent|owl|lmstudio|dflash|kimi|mimo|omniroute|openmodel|openmodel-bridge|claude>');
       process.exit(1);
     }
     break;

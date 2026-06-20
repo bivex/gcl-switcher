@@ -6,10 +6,10 @@
 
 const http = require('http');
 const https = require('https');
-const { readJson } = require('./utils');
-const { CONFIG_PATH } = require('./constants');
+const { readJson, currentMode } = require('./utils');
+const { CONFIG_PATH, SETTINGS_PATH } = require('./constants');
 
-function startBridge() {
+function startKimiBridge() {
   const config = readJson(CONFIG_PATH);
   const key = config.nvidiaApiKey;
   if (!key) {
@@ -129,6 +129,119 @@ function startBridge() {
   });
 
   server.listen(8080, '127.0.0.1');
+}
+
+function startOpenmodelBridge() {
+  const config = readJson(CONFIG_PATH);
+  const key = config.openmodelApiKey;
+  if (!key) {
+    console.error('No OpenModel key saved. Run first:\n  gcl-switcher set-openmodel-key <key>');
+    process.exit(1);
+  }
+
+  console.log('Starting OpenModel Bridge...');
+  console.log('Listening on http://127.0.0.1:8082');
+  console.log('Target: https://api.openmodel.ai');
+
+  const server = http.createServer((req, res) => {
+    // 1. Handle Retrieve Model request: GET /v1/models/{model_id}
+    const modelMatch = req.url.match(/^\/v1\/models\/(.+)$/);
+    if (req.method === 'GET' && modelMatch) {
+      let modelId = decodeURIComponent(modelMatch[1]);
+      // Normalize modelId (strip [1m], [1M], etc.)
+      modelId = modelId.replace(/\[1[mM]\]?$/, '');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        id: modelId,
+        type: 'model',
+        display_name: modelId,
+        created_at: '2024-10-22T00:00:00Z'
+      }));
+      return;
+    }
+
+    // 2. Handle List Models request: GET /v1/models
+    if (req.method === 'GET' && req.url === '/v1/models') {
+      const options = {
+        hostname: 'api.openmodel.ai',
+        path: '/v1/models',
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${key}`
+        }
+      };
+      const proxyReq = https.request(options, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        proxyRes.pipe(res);
+      });
+      proxyReq.on('error', (e) => {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: e.message }));
+      });
+      proxyReq.end();
+      return;
+    }
+
+    // 3. Handle Messages request: POST /v1/messages
+    if (req.method === 'POST' && req.url === '/v1/messages') {
+      let body = '';
+      req.on('data', chunk => (body += chunk));
+      req.on('end', () => {
+        try {
+          const anthropic = JSON.parse(body);
+          // Normalize model (strip [1m], [1M], etc.)
+          if (anthropic.model) {
+            anthropic.model = anthropic.model.replace(/\[1[mM]\]?$/, '');
+          }
+
+          const options = {
+            hostname: 'api.openmodel.ai',
+            path: '/v1/messages',
+            method: 'POST',
+            headers: {
+              'x-api-key': key,
+              'Content-Type': 'application/json',
+              'anthropic-version': req.headers['anthropic-version'] || '2023-06-01'
+            }
+          };
+
+          const proxyReq = https.request(options, (proxyRes) => {
+            res.writeHead(proxyRes.statusCode, proxyRes.headers);
+            proxyRes.pipe(res);
+          });
+
+          proxyReq.on('error', (e) => {
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: e.message }));
+          });
+
+          proxyReq.write(JSON.stringify(anthropic));
+          proxyReq.end();
+        } catch (e) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: 'Invalid request JSON' }));
+        }
+      });
+      return;
+    }
+
+    // Fallback
+    res.writeHead(404);
+    res.end();
+  });
+
+  server.listen(8082, '127.0.0.1');
+}
+
+function startBridge() {
+  const settings = readJson(SETTINGS_PATH);
+  const mode = currentMode(settings);
+
+  if (mode === 'openmodel-bridge' || mode === 'openmodel') {
+    startOpenmodelBridge();
+  } else {
+    startKimiBridge();
+  }
 }
 
 module.exports = {
