@@ -218,7 +218,7 @@ Browse available models at [openrouter.ai/models](https://openrouter.ai/models)
 {
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "<your_openmodel_key>",
-    "ANTHROPIC_BASE_URL": "https://api.openmodel.app/v1",
+    "ANTHROPIC_BASE_URL": "https://api.openmodel.ai/v1",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-3-5-sonnet",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-3-5-sonnet",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-3-5-sonnet",
@@ -278,7 +278,7 @@ gcl-switcher set-openmodel-key om_******
 gcl-switcher use openmodel
 ```
 
-Get an API key at [openmodel.app](https://openmodel.app)
+Get an API key at [console.openmodel.ai](https://console.openmodel.ai)
 
 ## Notes
 

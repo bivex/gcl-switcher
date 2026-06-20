@@ -56,7 +56,7 @@ function currentMode(settings) {
   if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) return 'dflash';
   if (url.includes(':20128') || url.includes('omniroute')) return 'omniroute';
   if (url.includes('xiaomimimo.com')) return 'mimo';
-  if (url.includes('openmodel.app')) return 'openmodel';
+  if (url.includes('openmodel')) return 'openmodel';
   if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes(':1234')) return 'lmstudio';
 
   if (url.includes('openrouter.ai')) {

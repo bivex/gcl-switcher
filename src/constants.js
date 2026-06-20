@@ -218,7 +218,7 @@ const MIMO_TIER_MODELS = {
   }
 };
 
-const OPENMODEL_BASE_URL = 'https://api.openmodel.app/v1';
+const OPENMODEL_BASE_URL = 'https://api.openmodel.ai/v1';
 const OPENMODEL_ENV = {
   ANTHROPIC_BASE_URL: OPENMODEL_BASE_URL,
   ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-3-5-sonnet',

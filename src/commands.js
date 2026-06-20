@@ -73,7 +73,7 @@ function status() {
     'kimi-bridge': 'Kimi (NVIDIA Bridge)',
     'omniroute': 'Omniroute (local)',
     'mimo': 'MiMo (xiaomimimo.com)',
-    'openmodel': 'OpenModel (api.openmodel.app)',
+    'openmodel': 'OpenModel (api.openmodel.ai)',
     'claude': 'Claude (native)'
   };
 
@@ -506,7 +506,7 @@ function help() {
     '  gcl-switcher use kimi-bridge             Switch to Kimi (NVIDIA Bridge)',
     '  gcl-switcher use mimo [v2.5|v2|flash]    Switch to MiMo (xiaomimimo.com)',
     '  gcl-switcher use omniroute               Switch to Omniroute (local:20128)',
-    '  gcl-switcher use openmodel               Switch to OpenModel (api.openmodel.app)',
+    '  gcl-switcher use openmodel               Switch to OpenModel (api.openmodel.ai)',
     '  gcl-switcher bridge                      Start local Kimi bridge server',
     '  gcl-switcher use claude                  Switch to native Claude',
     '  gcl-switcher set-key <api_key>           Save your z.ai API key',
